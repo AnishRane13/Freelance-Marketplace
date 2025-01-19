@@ -1,15 +1,19 @@
 const express = require("express");
-const dotnev = require("dotenv");
 const cors = require("cors");
+const userRoutes = require("./src/routes/user/userRoutes");
+require("dotenv").config({ path: "./conf/.env" });
 
-dotnev.config();
 
 const app = express();
 app.use(cors());
 const PORT = 5000;
 
+// Middleware to parse JSON
 app.use(express.json());
 
-app.listen(PORT, ()=>{
-    console.log(`Server running on http://localhost:${PORT}`)
-})
+// Use the user routes
+app.use("/registerUser", userRoutes);
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
