@@ -2,7 +2,7 @@ const pool = require('../../../db/db');
 
 const registerCompany = async (name, email, password) => {
     const query = `
-    INSERT INTO Company (
+    INSERT INTO company (
     name, email, password)
     VALUES ($1, $2, $3)
     RETURNING 

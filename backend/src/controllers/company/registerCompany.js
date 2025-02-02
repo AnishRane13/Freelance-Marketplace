@@ -17,10 +17,10 @@ const registerCompanyController = async (req, res) => {
 
         delete newCompany.password;
 
-        res.status(201).json(newUser);
+        res.status(201).json(newCompany);
     } catch (error) {
         console.error(error.message);
-        if (err.code === "23505") {
+        if (error.code === "23505") {
             // Unique violation
             res.status(409).json({ error: "Email already exists" });
           } else {

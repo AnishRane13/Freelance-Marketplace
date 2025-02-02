@@ -1,8 +1,13 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { SuccessNotification, ErrorNotification, FormFieldError, NotificationStyles } from '../../components/Notification.jsx';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 const Login = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const type = location.state?.type || "user"; // Default to "user" if no type is passed
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,27 +20,52 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));    
-    setIsLoading(false);
-    setNotification({
-      type: 'success',
-      message: 'Successfully logged in! Redirecting...'
-    });
+    setNotification(null);
+    setFormErrors({});
 
-    setNotification({
-      type: 'error',
-      message: 'Invalid email or password. Please try again.',
-      duration: 8000
-    });
-    
-    // Example of setting field-specific errors
-    setFormErrors({
-      email: 'Please enter a valid email address',
-      password: 'Password must be at least 8 characters'
-    });
+    try {
+      const endpoint = type === "user" 
+        ? "http://localhost:5000/loginUser"
+        : "http://localhost:5000/loginCompany";
 
-    
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setNotification({
+          type: 'success',
+          message: 'Successfully logged in! Redirecting...'
+        });
+        
+        // Add your authentication logic here (storing token etc)
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
+      } else {
+        if (response.status === 400) {
+          setFormErrors(data.errors || { email: "Invalid credentials" });
+        } else {
+          setNotification({
+            type: 'error',
+            message: 'Invalid email or password. Please try again.',
+          });
+        }
+      }
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Network error. Please check your connection.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[conic-gradient(at_bottom_right,var(--tw-gradient-stops))] from-blue-50 via-purple-50 to-pink-50 p-4 overflow-hidden">
