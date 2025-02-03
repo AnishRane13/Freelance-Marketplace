@@ -1,6 +1,11 @@
+const bcrypt = require("bcryptjs");
+
 const pool = require("../../../db/db");
 
 const registerUser = async (name, email, password) => {
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+    
     const query = `
     INSERT INTO users (
     name, email, password)
@@ -9,7 +14,7 @@ const registerUser = async (name, email, password) => {
     user_id, name, email, password
     `;
 
-    const values = [name, email, password];
+    const values = [name, email, hashedPassword];
 
     const result = await pool.query(query, values);
 

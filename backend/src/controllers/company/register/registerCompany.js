@@ -1,4 +1,4 @@
-const { registerCompany } = require ('../../models/company/registerCompany')
+const { registerCompany } = require ('../../../models/company/registerCompany')
 
 const registerCompanyController = async (req, res) => {
     try {

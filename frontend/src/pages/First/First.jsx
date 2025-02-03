@@ -13,7 +13,7 @@ const First = () => {
           <h2 className="text-lg text-center text-gray-600">Choose your registration type</h2>
           <div className="grid grid-cols-2 gap-4">
             <button
-              onClick={() => navigate('/signUp', { state: { type: 'user' } })}
+              onClick={() => navigate('/login', { state: { type: 'user' } })}
               className="flex flex-col items-center justify-center p-6 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors group"
             >
               <User className="w-8 h-8 text-blue-600 mb-2 group-hover:scale-110 transition-transform" />
@@ -21,23 +21,13 @@ const First = () => {
             </button>
             
             <button
-              onClick={() => navigate('/signUp', { state: { type: 'company' } })}
+              onClick={() => navigate('/login', { state: { type: 'company' } })}
               className="flex flex-col items-center justify-center p-6 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors group"
             >
               <Building2 className="w-8 h-8 text-blue-600 mb-2 group-hover:scale-110 transition-transform" />
               <span className="text-blue-600 font-medium">Company</span>
             </button>
           </div>
-          
-          <p className="text-sm text-gray-500 text-center mt-6">
-            Already have an account?{' '}
-            <button
-              onClick={() => navigate('/')}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Log in
-            </button>
-          </p>
         </div>
       </div>
     </div>

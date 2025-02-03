@@ -6,7 +6,9 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 const Login = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const type = location.state?.type || "user"; // Default to "user" if no type is passed
+  const type = location.state?.type || "user";
+
+  console.log("Typeee", type)
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -25,13 +27,14 @@ const Login = () => {
 
     try {
       const endpoint = type === "user" 
-        ? "http://localhost:5000/loginUser"
-        : "http://localhost:5000/loginCompany";
+        ? "http://localhost:5000/login"
+        : "http://localhost:5000/login";
 
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        credentials: "include", 
+        body: JSON.stringify({ email, password, type }),
       });
 
       const data = await response.json();
@@ -41,6 +44,9 @@ const Login = () => {
           type: 'success',
           message: 'Successfully logged in! Redirecting...'
         });
+
+        console.log("Login Successful", data);
+        localStorage.setItem("token", data.token);
         
         // Add your authentication logic here (storing token etc)
         setTimeout(() => {
@@ -59,7 +65,7 @@ const Login = () => {
     } catch (error) {
       setNotification({
         type: 'error',
-        message: 'Network error. Please check your connection.',
+        message: `${error}`,
       });
     } finally {
       setIsLoading(false);
@@ -218,16 +224,17 @@ const Login = () => {
           </form>
 
           {/* Sign Up Section */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-center text-gray-600">
-              Don't have an account?{' '}
-              <a href="/signUp">
-                <button className="font-semibold text-blue-600 hover:text-blue-800 transition-all duration-300 hover:scale-105">
-                  Create account
-                </button>
-              </a>
-            </p>
-          </div>
+<div className="mt-8 pt-6 border-t border-gray-200">
+  <p className="text-center text-gray-600">
+    Don't have an account?{' '}
+    <button 
+      onClick={() => navigate('/signUp', { state: { type } })}
+      className="font-semibold text-blue-600 hover:text-blue-800 transition-all duration-300 hover:scale-105"
+    >
+      Create account
+    </button>
+  </p>
+</div>
 
           {/* Social Login Options */}
           <div className="mt-6 space-y-4">
