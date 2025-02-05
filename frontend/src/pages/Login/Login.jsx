@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SuccessNotification, ErrorNotification, FormFieldError, NotificationStyles } from '../../components/Notification.jsx';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const Login = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const type = location.state?.type || "user";
-
-  console.log("Typeee", type)
+  const { login } = useAuth();
+  // console.log("Typeee", type)
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -45,8 +46,8 @@ const Login = () => {
           message: 'Successfully logged in! Redirecting...'
         });
 
-        console.log("Login Successful", data);
-        localStorage.setItem("token", data.token);
+        login(data.token, type);
+        navigate(type === "user" ? "/user/dashboard" : "/company/dashboard");
         
         // Add your authentication logic here (storing token etc)
         setTimeout(() => {

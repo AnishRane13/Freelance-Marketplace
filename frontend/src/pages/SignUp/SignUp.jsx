@@ -35,7 +35,7 @@ const SignUp = () => {
 
   // const navigate = useNavigate();
 
-  console.log("Type is", type);
+  // console.log("Type is", type);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
