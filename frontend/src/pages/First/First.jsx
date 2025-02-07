@@ -6,26 +6,39 @@ const First = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-8">Welcome to Our Platform</h1>
-        <div className="space-y-6">
-          <h2 className="text-lg text-center text-gray-600">Choose your registration type</h2>
-          <div className="grid grid-cols-2 gap-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#13505b] p-4 overflow-hidden">
+      <div className="fixed inset-0">
+        <div className="absolute -top-48 -left-48 w-96 h-96 bg-[#119da4]/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/2 -right-48 w-96 h-96 bg-[#0c7489]/20 rounded-full blur-3xl animate-pulse delay-700" />
+        <div className="absolute -bottom-48 left-1/2 w-96 h-96 bg-[#13505b]/20 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      <div className="relative w-full max-w-md">
+        <div className="relative backdrop-blur-xl bg-[#ffffff]/80 p-8 rounded-3xl border border-white/20 shadow-2xl shadow-black/5">
+          <div className="space-y-2 mb-8">
+            <h1 className="text-4xl font-bold text-[#040404] text-center">
+              Welcome
+            </h1>
+            <p className="text-[#13505b] text-center">
+              Choose your registration type
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mt-8">
             <button
               onClick={() => navigate('/login', { state: { type: 'user' } })}
-              className="flex flex-col items-center justify-center p-6 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors group"
+              className="flex flex-col items-center justify-center p-8 bg-[#ffffff] border-2 border-[#119da4]/20 rounded-2xl hover:border-[#119da4] transition-all duration-300 group"
             >
-              <User className="w-8 h-8 text-blue-600 mb-2 group-hover:scale-110 transition-transform" />
-              <span className="text-blue-600 font-medium">User</span>
+              <User className="w-12 h-12 text-[#119da4] mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-[#13505b] font-medium text-lg">User</span>
             </button>
             
             <button
               onClick={() => navigate('/login', { state: { type: 'company' } })}
-              className="flex flex-col items-center justify-center p-6 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors group"
+              className="flex flex-col items-center justify-center p-8 bg-[#ffffff] border-2 border-[#119da4]/20 rounded-2xl hover:border-[#119da4] transition-all duration-300 group"
             >
-              <Building2 className="w-8 h-8 text-blue-600 mb-2 group-hover:scale-110 transition-transform" />
-              <span className="text-blue-600 font-medium">Company</span>
+              <Building2 className="w-12 h-12 text-[#119da4] mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-[#13505b] font-medium text-lg">Company</span>
             </button>
           </div>
         </div>

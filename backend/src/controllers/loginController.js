@@ -49,9 +49,10 @@ const loginController = async (req, res) => {
     };
 
     // Remove sensitive data before sending response
-    const { password: _, ...userData } = user;
+    const { password: _, categories, ...userData } = user;
+    const selectedCategories = categories ? JSON.parse(categories) : [];
 
-    res.json({ success: true, message: "Login successful", user: userData, token });
+    res.json({ success: true, message: "Login successful", user: userData,  categoriesSelected: selectedCategories.length > 0,  token });
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
