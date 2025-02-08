@@ -1,6 +1,6 @@
-import pool from "../../../db/db";
+const pool = require("../../../db/db")
 
-const storeCategories = async (req, res) => {
+const storeCategoriesController = async (req, res) => {
     try {
       const { id, type, categories } = req.body;
   
@@ -20,5 +20,5 @@ const storeCategories = async (req, res) => {
     }
   };
   
-  module.exports = { storeCategories };
+  module.exports = { storeCategoriesController };
   

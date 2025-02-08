@@ -48,6 +48,8 @@ const Login = () => {
         });
 
         localStorage.setItem("categoriesSelected", data.categoriesSelected);
+        localStorage.setItem("user_id", data.user.user_id);
+        localStorage.setItem("name", data.user.name);
 
         login(data.token, type);
         navigate(type === "user" ? "/user/dashboard" : "/company/dashboard");
