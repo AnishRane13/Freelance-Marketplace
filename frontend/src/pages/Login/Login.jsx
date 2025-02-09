@@ -48,7 +48,13 @@ const Login = () => {
         });
 
         localStorage.setItem("categoriesSelected", data.categoriesSelected);
-        localStorage.setItem("user_id", data.user.user_id);
+
+        if (data.user.user_id) {   
+          localStorage.setItem("user_id", data.user.user_id);
+        }
+        else{
+          localStorage.setItem("user_id", data.user.company_id);
+        }
         localStorage.setItem("name", data.user.name);
 
         login(data.token, type);

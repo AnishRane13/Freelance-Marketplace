@@ -45,7 +45,7 @@ function App() {
           {/* User Routes */}
           <Route element={<ProtectedRoute element={<UserLayout />} allowedType="user" />}>
             <Route path="/user/dashboard" element={<UserDashboard />} />
-            {/* <Route path="/user/profile" element={<UserProfile />} /> */}
+            <Route path="/user/profile/:user_id" element={<UserProfile />} />
             {/* <Route path="/user/settings" element={<UserSettings />} /> */}
           </Route>
 

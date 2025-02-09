@@ -7,6 +7,7 @@ const UserNavbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const username = localStorage.getItem("name") || "User";
+  const user_id = localStorage.getItem("user_id");
 
   // Only needed for desktop dropdown now
   useEffect(() => {
@@ -61,14 +62,14 @@ const UserNavbar = () => {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-r from-[#13505B] to-[#119DA4] shadow-lg w-full">
-        <div className="max-w-screen-xl mx-auto px-3 sm:px-4">
+        <div className="mx-auto px-3 sm:px-4">
           <div className="flex justify-between items-center h-16">
             {/* Logo Section */}
             <Link to="/user/dashboard" className="flex items-center space-x-2 min-w-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-[#119DA4] text-lg sm:text-2xl font-bold">LC</span>
+                <span className="text-[#119DA4] text-lg sm:text-2xl font-bold"></span>
               </div>
-              <span className="text-white text-base sm:text-xl font-semibold hidden sm:block truncate">LogoCompany</span>
+              <span className="text-white text-base sm:text-xl font-semibold hidden sm:block truncate">User</span>
             </Link>
 
             {/* Mobile Menu Button */}
@@ -113,7 +114,7 @@ const UserNavbar = () => {
                 <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                   <div className="py-1" role="menu">
                     <Link
-                      to="/user/profile"
+                      to={`/user/profile/${user_id}`}
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#119DA4] transition-colors duration-200"
                       onClick={() => setIsDropdownOpen(false)}
                     >
@@ -201,7 +202,7 @@ const UserNavbar = () => {
               
               {/* Profile and Logout Links */}
               <Link
-                to="/user/profile"
+                 to={`/user/profile/${user_id}`}
                 className="flex items-center space-x-2 px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-[#119DA4] transition-colors duration-200"
                 onClick={() => setIsSidebarOpen(false)}
               >
