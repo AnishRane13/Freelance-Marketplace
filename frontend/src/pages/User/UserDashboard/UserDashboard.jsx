@@ -6,24 +6,56 @@ import { Settings, Layout, Edit2, AlertCircle } from "lucide-react";
 const UserDashboard = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userName, setUserName] = useState("User"); // You can fetch this from your auth context
+  const [userName, setUserName] = useState("User"); 
 
   useEffect(() => {
     // Get stored categories from localStorage
-    const storedCategories = localStorage.getItem("selectedCategories");
+    const storedCategories = localStorage.getItem("categoriesSelected");
     if (storedCategories) {
+      console.log("storedCategoriessss",storedCategories);
       setSelectedCategories(JSON.parse(storedCategories));
     } else {
       setIsModalOpen(true);
     }
   }, []);
 
-  const handleSaveCategories = (categories) => {
-    setSelectedCategories(categories);
-    localStorage.setItem("selectedCategories", JSON.stringify(categories));
-    setIsModalOpen(false);
+  const handleSaveCategories = async (categories) => {
+    try {
+      const user_id = localStorage.getItem("user_id");
+      const userType = localStorage.getItem("userType");
+  
+      if (!user_id || !userType) {
+        console.error("User ID or User Type is missing");
+        return;
+      }
+  
+      const response = await fetch("http://localhost:5000/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: user_id,
+          type: userType,
+          categories,
+        }),
+      });
+  
+      const data = await response.json();
+      if (data.success) {
+        setSelectedCategories(categories);
+        // localStorage.setItem("selectedCategories", JSON.stringify(categories));
+        localStorage.setItem("categoriesSelected", true);
+        setIsModalOpen(false);
+      } else {
+        console.error("Error saving categories:", data.error);
+      }
+    } catch (error) {
+      console.error("Failed to save categories:", error);
+    }
   };
 
+  
   return (
     <div className="min-h-screen bg-[#13505b] p-6">
       <div className="max-w-6xl mx-auto">
