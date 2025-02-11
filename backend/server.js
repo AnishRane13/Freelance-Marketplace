@@ -1,9 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
-const userRoutes = require("./src/routes/users/userRoutes");
-const companyRoutes = require("./src/routes/company/companyRoutes")
+// const userRoutes = require("./src/routes/users/userRoutes");
+// const companyRoutes = require("./src/routes/company/companyRoutes")
 require("dotenv").config({ path: "./conf/.env" });
+const registerRoutes = require("./src/routes/RegisterRoutes")
 const loginRoutes = require("./src/routes/LoginRoutes");
 const logoutRoutes = require("./src/routes/LogoutRoutes");
 const categoriesRoutes = require("./src/routes/categories/categories")
@@ -26,9 +27,9 @@ app.use(
 app.use(express.json());
 
 // Use the user routes
-app.use("/registerUser", userRoutes);
+app.use("/register", registerRoutes);
 
-app.use("/registerCompany", companyRoutes);
+// app.use("/registerCompany", companyRoutes);
 
 app.use("/categories", categoriesRoutes)
 

@@ -44,15 +44,12 @@ const SignUp = () => {
     setFormErrors({});
 
     try {
-      const endpoint =
-        type === "user"
-          ? "http://localhost:5000/registerUser"
-          : "http://localhost:5000/registerCompany";
+      const endpoint = "http://localhost:5000/register";
 
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, type }),
       });
 
       const data = await response.json();

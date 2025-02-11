@@ -13,7 +13,7 @@ const UserDashboard = () => {
   useEffect(() => {
     const storedCategories = localStorage.getItem("categoriesSelected");
     const userName = setUserName(localStorage.getItem("name"));
-    console.log("storedCategories",storedCategories)
+    // console.log("storedCategories",storedCategories)
     if (storedCategories === "true") {
       setSelectedCategories(JSON.parse(storedCategories));
     } else {

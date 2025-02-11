@@ -7,6 +7,7 @@ import UserLayout from "./components/User/UserLayout.jsx";
 import CompanyLayout from "./components/Company/CompanyLayout.jsx";
 import UserDashboard from "./pages/User/UserDashboard/UserDashboard.jsx";
 import CompanyDashboard from "./pages/Company/CompanyDashboard/CompanyDashboard.jsx";
+import UserProfile from "./pages/User/UserProfile/UserProfile.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { AuthProvider } from "./context/AuthContext";
 
