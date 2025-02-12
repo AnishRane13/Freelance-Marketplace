@@ -8,7 +8,7 @@ CREATE TABLE users (
     profile_picture VARCHAR(255), -- S3 URL
     cover_photo VARCHAR(255), -- S3 URL
     bio TEXT,
-    categories JSONB DEFAULT '[]', -- JSONB for category storage
+    categories INTEGER[] DEFAULT '{}', 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -26,6 +26,18 @@ CREATE TABLE categories (
     category_id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL
 );
+
+INSERT INTO categories (name) VALUES
+    ('Web Development'),
+    ('Graphic Design'),
+    ('Digital Marketing'),
+    ('Content Writing'),
+    ('Video Production'),
+    ('Photography'),
+    ('Music & Audio'),
+    ('Virtual Assistance'),
+    ('Data Analysis'),
+    ('Mobile App Development');
 
 -- POSTS TABLE (User-created posts)
 CREATE TABLE posts (

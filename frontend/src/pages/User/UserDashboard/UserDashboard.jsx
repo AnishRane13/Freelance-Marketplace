@@ -1,33 +1,81 @@
 import { useEffect, useState } from "react";
-// import LogoutButton from "../../../components/LogoutButton";
 import Modal from "../../../components/Modal";
-import { Settings, Layout, Edit2, AlertCircle } from "lucide-react";
+import { Settings, Layout, Edit2, AlertCircle, LogOut, User, Mail, Calendar } from "lucide-react";
 
 const UserDashboard = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userName, setUserName] = useState("User");
-
-  const value = 0;
+  const [userData, setUserData] = useState({
+    name: "User",
+    email: "",
+    created_at: "",
+    profile_picture: null
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedCategories = localStorage.getItem("categoriesSelected");
-    const userName = setUserName(localStorage.getItem("name"));
-    // console.log("storedCategories",storedCategories)
-    if (storedCategories === "true") {
-      setSelectedCategories(JSON.parse(storedCategories));
-    } else {
-      setIsModalOpen(true);
-    }
-  }, [value]);
+    const fetchUserData = async () => {
+      try {
+        const userId = localStorage.getItem("user_id");
+        const token = localStorage.getItem("token");
+
+        if (!userId || !token) {
+          window.location.href = "/login";
+          return;
+        }
+
+        // Fetch user data
+        const userResponse = await fetch(`http://localhost:5000/users/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const userData = await userResponse.json();
+        if (userData.success) {
+          setUserData({
+            name: userData.user.name,
+            email: userData.user.email,
+            created_at: new Date(userData.user.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long'
+            }),
+            profile_picture: userData.user.profile_picture
+          });
+        }
+
+        // Fetch user categories
+        const categoryResponse = await fetch(`http://localhost:5000/users/${userId}/categories`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const categoryData = await categoryResponse.json();
+        if (categoryData.success) {
+          setSelectedCategories(categoryData.categories.map(cat => cat.name));
+        } else {
+          setIsModalOpen(true);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setIsModalOpen(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleSaveCategories = async (categories) => {
     try {
       const user_id = localStorage.getItem("user_id");
+      const token = localStorage.getItem("token");
       const userType = localStorage.getItem("userType");
 
-      if (!user_id || !userType) {
-        console.error("User ID or User Type is missing");
+      if (!user_id || !token || !userType) {
+        console.error("Missing required data");
         return;
       }
 
@@ -35,14 +83,18 @@ const UserDashboard = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ id: user_id, type: userType, categories }),
+        body: JSON.stringify({ 
+          id: user_id, 
+          type: userType, 
+          categories 
+        }),
       });
 
       const data = await response.json();
       if (data.success) {
         setSelectedCategories(categories);
-        localStorage.setItem("categoriesSelected", "true");
         setIsModalOpen(false);
       } else {
         console.error("Error saving categories:", data.error);
@@ -52,13 +104,27 @@ const UserDashboard = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    window.location.href = "/login";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#13505b] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#13505b] p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
+        {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-              Welcome back, {userName}
+              Welcome back, {userData.name}
             </h1>
             <p className="text-[#119da4]/80">Manage your preferences and explore your interests</p>
           </div>
@@ -70,11 +136,19 @@ const UserDashboard = () => {
               <Settings className="w-4 h-4" />
               Edit Categories
             </button>
-            {/* <LogoutButton /> */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20 transition"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
           </div>
         </div>
 
+        {/* Main Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Categories Card */}
           <div className="bg-white/80 p-4 sm:p-6 rounded-2xl border border-white/20 shadow-md">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg sm:text-xl font-semibold text-[#13505b]">Your Categories</h2>
@@ -99,23 +173,38 @@ const UserDashboard = () => {
             )}
           </div>
 
+          {/* Profile Details Card */}
           <div className="bg-white/80 p-4 sm:p-6 rounded-2xl border border-white/20 shadow-md">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg sm:text-xl font-semibold text-[#13505b]">Profile Details</h2>
               <Edit2 className="w-5 h-5 text-[#119da4]" />
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="text-sm text-[#13505b]/60">Email</label>
-                <p className="text-[#13505b]">user@example.com</p>
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-[#119da4]" />
+                <div>
+                  <label className="text-sm text-[#13505b]/60">Name</label>
+                  <p className="text-[#13505b]">{userData.name}</p>
+                </div>
               </div>
-              <div>
-                <label className="text-sm text-[#13505b]/60">Member Since</label>
-                <p className="text-[#13505b]">January 2024</p>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-[#119da4]" />
+                <div>
+                  <label className="text-sm text-[#13505b]/60">Email</label>
+                  <p className="text-[#13505b]">{userData.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#119da4]" />
+                <div>
+                  <label className="text-sm text-[#13505b]/60">Member Since</label>
+                  <p className="text-[#13505b]">{userData.created_at}</p>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Quick Stats Card */}
           <div className="bg-white/80 p-4 sm:p-6 rounded-2xl border border-white/20 shadow-md">
             <h2 className="text-lg sm:text-xl font-semibold text-[#13505b] mb-3">Quick Stats</h2>
             <div className="grid grid-cols-2 gap-4">
@@ -132,7 +221,13 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveCategories} />
+      {/* Categories Modal */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSave={handleSaveCategories}
+        initialCategories={selectedCategories}
+      />
     </div>
   );
 };

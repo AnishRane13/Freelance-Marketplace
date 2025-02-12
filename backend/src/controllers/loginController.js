@@ -16,10 +16,8 @@ const loginController = async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid user type" });
     }
 
-    const tableName = type === "user" ? "users" : "company";
-
-    // Get user or company from DB
-    const query = `SELECT * FROM ${tableName} WHERE email = $1`;
+    // Get user from DB
+    const query = `SELECT * FROM users WHERE email = $1`;
     const { rows } = await pool.query(query, [email]);
 
     if (rows.length === 0) {
@@ -36,23 +34,44 @@ const loginController = async (req, res) => {
 
     // Generate JWT Token
     const token = jwt.sign(
-      { id: user.user_id || user.company_id, email: user.email, type },
+      { id: user.user_id, email: user.email, type },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     // Set session securely
     req.session.user = {
-      id: user.user_id || user.company_id,
+      id: user.user_id,
       email: user.email,
       type,
     };
 
     // Remove sensitive data before sending response
     const { password: _, categories, ...userData } = user;
-    const selectedCategories = categories ? JSON.parse(categories) : [];
+    
+    // Parse the JSONB categories array
+    const selectedCategoryIds = categories || [];
 
-    res.json({ success: true, message: "Login successful", user: userData,  categoriesSelected: selectedCategories.length > 0,  token });
+    // Fetch category names for the selected category IDs
+    let categoryNames = [];
+    if (selectedCategoryIds.length > 0) {
+      const categoryQuery = `
+        SELECT name 
+        FROM categories 
+        WHERE category_id = ANY($1::int[])
+      `;
+      const { rows: categoryRows } = await pool.query(categoryQuery, [selectedCategoryIds]);
+      categoryNames = categoryRows.map(row => row.name);
+    }
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: userData,
+      categoriesSelected: categoryNames.length > 0,
+      categories: categoryNames,
+      token,
+    });
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });

@@ -15,14 +15,18 @@ const Modal = ({ isOpen, onClose, onSave }) => {
           throw new Error('Failed to fetch categories');
         }
         const data = await response.json();
-        setCategories(data.categories);
+        if (data.success) {
+          setCategories(data.categories);
+        } else {
+          throw new Error(data.error || 'Failed to fetch categories');
+        }
         setIsLoading(false);
       } catch (err) {
         setError('Failed to load categories');
         setIsLoading(false);
       }
     };
-
+  
     if (isOpen) {
       fetchCategories();
     }
@@ -42,17 +46,7 @@ const Modal = ({ isOpen, onClose, onSave }) => {
 
   if (!isOpen) return null;
 
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case "Photography": return "📸";
-      case "Coding": return "💻";
-      case "Sports": return "⚽";
-      case "Fashion": return "👗";
-      case "Beauty": return "💄";
-      case "Restaurant": return "🍽️";
-      default: return "✨";
-    }
-  };
+ 
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -77,27 +71,26 @@ const Modal = ({ isOpen, onClose, onSave }) => {
           <div className="text-red-500 text-center p-4">{error}</div>
         ) : (
           <div className="grid grid-cols-2 gap-4 mb-6">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => toggleCategory(category)}
-                className={`relative group p-4 rounded-2xl border-2 transition-all duration-300 ${
-                  selectedCategories.includes(category)
-                    ? 'border-[#119da4] bg-[#119da4]/10'
-                    : 'border-[#13505b]/10 hover:border-[#119da4]/50 bg-white/50'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getCategoryIcon(category)}</span>
-                  <span className="text-[#13505b] font-medium">{category}</span>
-                </div>
-                <div className={`absolute top-2 right-2 transition-transform duration-300 ${
-                  selectedCategories.includes(category) ? 'scale-100' : 'scale-0'
-                }`}>
-                  <CheckCircle className="w-5 h-5 text-[#119da4]" />
-                </div>
-              </button>
-            ))}
+           {categories.map((category) => (
+  <button
+    key={category.id}
+    onClick={() => toggleCategory(category)}
+    className={`relative group p-4 rounded-2xl border-2 transition-all duration-300 ${
+      selectedCategories.includes(category)
+        ? 'border-[#119da4] bg-[#119da4]/10'
+        : 'border-[#13505b]/10 hover:border-[#119da4]/50 bg-white/50'
+    }`}
+  >
+    <div className="flex items-center space-x-3">
+      <span className="text-[#13505b] font-medium">{category.name}</span>
+    </div>
+    <div className={`absolute top-2 right-2 transition-transform duration-300 ${
+      selectedCategories.includes(category) ? 'scale-100' : 'scale-0'
+    }`}>
+      <CheckCircle className="w-5 h-5 text-[#119da4]" />
+    </div>
+  </button>
+))}
           </div>
         )}
 

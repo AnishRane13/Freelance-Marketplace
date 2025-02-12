@@ -1,7 +1,3 @@
-We are sending user id in the url so get it from there and use it to get user details 
-Make User profile
-Start working with user's profile page.
-
 
 
 color themes
@@ -10,3 +6,7 @@ color themes
 #0c7489
 #13505b
 #040404
+
+
+
+In the User dashboard in the POST, the categories are not getting sent to the database.
