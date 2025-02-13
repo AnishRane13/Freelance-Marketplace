@@ -8,6 +8,7 @@ const registerRoutes = require("./src/routes/RegisterRoutes")
 const loginRoutes = require("./src/routes/LoginRoutes");
 const logoutRoutes = require("./src/routes/LogoutRoutes");
 const categoriesRoutes = require("./src/routes/categories/categories")
+const userRoutes = require("./src/routes/users/userRoutes");
 
 const app = express();
 // app.use(cors());
@@ -28,6 +29,8 @@ app.use(express.json());
 
 // Use the user routes
 app.use("/register", registerRoutes);
+
+app.use("/users", userRoutes);
 
 // app.use("/registerCompany", companyRoutes);
 

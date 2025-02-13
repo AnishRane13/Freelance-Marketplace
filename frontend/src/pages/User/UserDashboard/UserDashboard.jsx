@@ -18,12 +18,18 @@ const UserDashboard = () => {
       try {
         const userId = localStorage.getItem("user_id");
         const token = localStorage.getItem("token");
-
+  
         if (!userId || !token) {
           window.location.href = "/login";
           return;
         }
-
+        
+        const areCategoriesSelected = localStorage.getItem("categoriesSelected");
+  
+        if (areCategoriesSelected !== "true") {
+          setIsModalOpen(true);
+        } 
+  
         // Fetch user data
         const userResponse = await fetch(`http://localhost:5000/users/${userId}`, {
           headers: {
@@ -33,6 +39,7 @@ const UserDashboard = () => {
         
         const userData = await userResponse.json();
         if (userData.success) {
+          // Update the user data state with all fields from API
           setUserData({
             name: userData.user.name,
             email: userData.user.email,
@@ -40,31 +47,28 @@ const UserDashboard = () => {
               year: 'numeric',
               month: 'long'
             }),
-            profile_picture: userData.user.profile_picture
+            profile_picture: userData.user.profile_picture,
+            bio: userData.user.bio,
+            user_type: userData.user.user_type
           });
-        }
-
-        // Fetch user categories
-        const categoryResponse = await fetch(`http://localhost:5000/users/${userId}/categories`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
+  
+          // Update categories if they exist
+          if (userData.user.categories && Array.isArray(userData.user.categories)) {
+            setSelectedCategories(userData.user.categories);
+            // Update localStorage only if categories exist
+            if (userData.user.categories.length > 0) {
+              localStorage.setItem("categoriesSelected", "true");
+            }
           }
-        });
-        
-        const categoryData = await categoryResponse.json();
-        if (categoryData.success) {
-          setSelectedCategories(categoryData.categories.map(cat => cat.name));
-        } else {
-          setIsModalOpen(true);
         }
+        
       } catch (error) {
         console.error("Error fetching user data:", error);
-        setIsModalOpen(true);
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     fetchUserData();
   }, []);
 
@@ -104,11 +108,6 @@ const UserDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = "/login";
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#13505b] flex items-center justify-center">
@@ -126,24 +125,8 @@ const UserDashboard = () => {
             <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
               Welcome back, {userData.name}
             </h1>
-            <p className="text-[#119da4]/80">Manage your preferences and explore your interests</p>
           </div>
-          <div className="flex gap-2 sm:gap-4 mt-4 md:mt-0">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#119da4] text-white rounded-xl hover:bg-[#0c7489] transition"
-            >
-              <Settings className="w-4 h-4" />
-              Edit Categories
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20 transition"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
-          </div>
+        
         </div>
 
         {/* Main Grid */}
