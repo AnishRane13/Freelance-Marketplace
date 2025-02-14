@@ -8,5 +8,4 @@ color themes
 #040404
 
 
-
-In the User dashboard in the POST, the categories are not getting sent to the database.
+Started with user profile but on the company side everything is pending also add persistent session management on the frontend
