@@ -8,4 +8,8 @@ color themes
 #040404
 
 
-Started with user profile but on the company side everything is pending also add persistent session management on the frontend
+
+
+Persistent Session management is done
+/api/posts/${userId} (POST) - for creating new posts   -- Pending
+/categories/${userId} (GET) - for fetching categories  --- This is done on the backend and on the frontend as well 

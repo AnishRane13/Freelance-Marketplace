@@ -8,7 +8,7 @@ CREATE TABLE users (
     profile_picture VARCHAR(255), -- S3 URL
     cover_photo VARCHAR(255), -- S3 URL
     bio TEXT,
-    categories INTEGER[] DEFAULT '{}', 
+    categories INTEGER[] DEFAULT '{}',  -- category id will be here
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

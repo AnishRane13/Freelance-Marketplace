@@ -17,6 +17,7 @@ import {
   Camera,
   Plus,
 } from "lucide-react";
+import CreatePost from "../../../components/CreatePost";
 
 const UserProfile = () => {
   const { user_id } = useParams();
@@ -25,6 +26,7 @@ const UserProfile = () => {
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState({});
   const [tempData, setTempData] = useState({});
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const [toasts, setToasts] = useState([]);
 
   const categoryMap = {
@@ -225,6 +227,15 @@ const UserProfile = () => {
           >
             <Camera className="w-16 h-16 text-white" />
           </button>
+          <div className="absolute top-4 right-4">
+            <button
+              onClick={() => setShowCreatePost(true)}
+              className="px-4 py-2 bg-[#119da4] text-white rounded-lg hover:bg-[#0c7489] transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Post
+            </button>
+          </div>
         </div>
 
         {/* Profile Section */}
@@ -314,8 +325,7 @@ const UserProfile = () => {
             ) : (
               <div className="flex items-center space-x-2 mt-2">
                 <p className="text-white/90">
-                  {userData.bio ||
-                    "Add a bio to tell people about your user"}
+                  {userData.bio || "Add a bio to tell people about your user"}
                 </p>
                 <button
                   onClick={() => handleEdit("bio")}
@@ -415,13 +425,10 @@ const UserProfile = () => {
                   <Calendar className="w-5 h-5" />
                   <span>
                     Joined{" "}
-                    {new Date(userData.created_at).toLocaleDateString(
-                      "en-US",
-                      {
-                        month: "long",
-                        year: "numeric",
-                      }
-                    )}
+                    {new Date(userData.created_at).toLocaleDateString("en-US", {
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </span>
                 </div>
               </div>
@@ -542,9 +549,8 @@ const UserProfile = () => {
                   {userData.description || (
                     <div className="space-y-4">
                       <p>
-                        Welcome to {userData.name}! We specialize in
-                        delivering innovative solutions across multiple domains
-                        including{" "}
+                        Welcome to {userData.name}! We specialize in delivering
+                        innovative solutions across multiple domains including{" "}
                         {(userData.categories || [])
                           .map((id) => categoryMap[id])
                           .slice(0, 3)
@@ -617,6 +623,13 @@ const UserProfile = () => {
           </div>
         ))}
       </div>
+
+      {showCreatePost && (
+  <CreatePost 
+    userId={user_id} 
+    onClose={() => setShowCreatePost(false)} 
+  />
+)}
     </div>
   );
 };

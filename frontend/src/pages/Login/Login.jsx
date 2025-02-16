@@ -9,7 +9,7 @@ const Login = () => {
   const navigate = useNavigate();
   const type = location.state?.type || "user";
   const { login } = useAuth();
-  // console.log("Typeee", type)
+  console.log("Typeee", type)
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -39,9 +39,19 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log("Data is here my boy login", data)
+      console.log("Login response data:", data);
 
       if (response.ok) {
+        // Check if the login type matches the user_type from server
+        if (type !== data.user.user_type) {
+          setNotification({
+            type: 'error',
+            message: `This account is registered as a ${data.user.user_type}. Please use the ${data.user.user_type} login instead.`
+          });
+          setIsLoading(false);
+          return;
+        }
+
         setNotification({
           type: 'success',
           message: 'Successfully logged in! Redirecting...'
@@ -49,25 +59,34 @@ const Login = () => {
 
         localStorage.setItem("categoriesSelected", data.categoriesSelected);
 
-        if (data.user.user_id) {   
+        if (data.user.user_type === "user") {   
           localStorage.setItem("user_id", data.user.user_id);
+          console.log("User ID stored:", data.user.user_id);
+        } else {
+          localStorage.setItem("user_id", data.user.user_id);
+          console.log("Company ID stored:", data.user.user_id);
         }
-        else{
-          localStorage.setItem("user_id", data.user.company_id);
-        }
-        localStorage.setItem("name", data.user.name);
-
-        login(data.token, type);
-        navigate(type === "user" ? "/user/dashboard" : "/company/dashboard");
         
-        // Add your authentication logic here (storing token etc)
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 2000);
+        localStorage.setItem("name", data.user.name);
+        console.log("User name stored:", data.user.name);
+
+        console.log("Calling login with token:", data.token, "and type:", data.user.user_type);
+        login(data.token, data.user.user_type);
+
+        // Only navigate if the types match
+        if (type === data.user.user_type) {
+          const targetDashboard = data.user.user_type === "user" ? "/user/dashboard" : "/company/dashboard";
+          console.log("Navigating to dashboard:", targetDashboard);
+          navigate(targetDashboard);
+        }
+
       } else {
+        console.log("Login failed with status:", response.status);
         if (response.status === 400) {
+          console.log("Validation errors:", data.errors);
           setFormErrors(data.errors || { email: "Invalid credentials" });
         } else {
+          console.log("Generic login error");
           setNotification({
             type: 'error',
             message: 'Invalid email or password. Please try again.',
@@ -75,11 +94,13 @@ const Login = () => {
         }
       }
     } catch (error) {
+      console.error("Login error:", error);
       setNotification({
         type: 'error',
         message: `${error}`,
       });
     } finally {
+      console.log("Login process completed, loading state cleared");
       setIsLoading(false);
     }
   };

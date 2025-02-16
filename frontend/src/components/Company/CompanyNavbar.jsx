@@ -9,6 +9,7 @@ const CompanyNavbar = () => {
   const username = localStorage.getItem("name") || "User";
   const company_id = localStorage.getItem("user_id");
 
+  console.log("Id is here", company_id)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
