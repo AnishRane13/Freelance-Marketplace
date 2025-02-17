@@ -9,6 +9,7 @@ const loginRoutes = require("./src/routes/LoginRoutes");
 const logoutRoutes = require("./src/routes/LogoutRoutes");
 const categoriesRoutes = require("./src/routes/categories/categories")
 const userRoutes = require("./src/routes/users/userRoutes");
+const postRoutes = require("./src/routes/posts/postRoutes");
 
 const app = express();
 // app.use(cors());
@@ -33,6 +34,7 @@ app.use("/register", registerRoutes);
 app.use("/users", userRoutes);
 
 // app.use("/registerCompany", companyRoutes);
+app.use("/posts", postRoutes);
 
 app.use("/categories", categoriesRoutes)
 

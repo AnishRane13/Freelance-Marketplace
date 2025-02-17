@@ -3,8 +3,8 @@ import { X, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 const CreatePost = ({ userId, onClose }) => {
   const [content, setContent] = useState('');
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,10 +18,10 @@ const CreatePost = ({ userId, onClose }) => {
     try {
       const response = await fetch(`http://localhost:5000/categories/${userId}`);
       const data = await response.json();
-      if (data.success) {
-        setCategories(data.categories); // Correctly set the categories
+      if (response.ok && data.success) {
+        setCategories(data.categories);
       } else {
-        console.error('Failed to fetch categories:', data.error);
+        console.error('Failed to fetch categories:', data.error || 'Unknown error');
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -29,15 +29,15 @@ const CreatePost = ({ userId, onClose }) => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    const files = Array.from(e.target.files);
+    const newImagePreviews = files.map((file) => URL.createObjectURL(file));
+    setImages((prevImages) => [...prevImages, ...files]);
+    setImagePreviews((prevPreviews) => [...prevPreviews, ...newImagePreviews]);
+  };
+
+  const handleRemoveImage = (index) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+    setImagePreviews((prevPreviews) => prevPreviews.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -46,27 +46,34 @@ const CreatePost = ({ userId, onClose }) => {
 
     try {
       const formData = new FormData();
+      formData.append('userId', userId)
       formData.append('content', content);
       formData.append('category_id', selectedCategory);
-      if (image) {
-        formData.append('image', image);
-      }
 
-      const response = await fetch(`/api/posts/${userId}`, {
+      images.forEach((image) => {
+        formData.append("images", image);
+      });
+      
+
+      const response = await fetch(`http://localhost:5000/posts`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Failed to create post');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create post');
+      }
 
-      // Reset form
+      // Reset form on success
       setContent('');
-      setImage(null);
-      setImagePreview(null);
+      setImages([]);
+      setImagePreviews([]);
       setSelectedCategory('');
-      onClose();
+      onClose(); // Close the modal
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('Error creating post:', error.message || error);
+      alert('Failed to create post. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -77,10 +84,7 @@ const CreatePost = ({ userId, onClose }) => {
       <div className="bg-white rounded-xl w-full max-w-2xl p-6 m-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-[#13505b] font-semibold text-lg">Create Post</h2>
-          <button 
-            onClick={onClose}
-            className="text-[#13505b]/60 hover:text-[#13505b]"
-          >
+          <button onClick={onClose} className="text-[#13505b]/60 hover:text-[#13505b]">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -113,44 +117,38 @@ const CreatePost = ({ userId, onClose }) => {
             ref={fileInputRef}
             onChange={handleImageChange}
             accept="image/*"
+            multiple
             className="hidden"
           />
 
-          {imagePreview ? (
-            <div className="relative">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-full h-48 object-cover rounded-lg"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setImage(null);
-                  setImagePreview(null);
-                }}
-                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
+          {imagePreviews.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              {imagePreviews.map((preview, index) => (
+                <div key={index} className="relative">
+                  <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-48 object-cover rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full p-4 border-2 border-dashed border-[#119da4] rounded-lg text-[#119da4] hover:bg-[#119da4]/5 transition-colors flex items-center justify-center gap-2"
-            >
-              <ImageIcon className="w-5 h-5" />
-              Add Image
-            </button>
           )}
 
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full p-4 border-2 border-dashed border-[#119da4] rounded-lg text-[#119da4] hover:bg-[#119da4]/5 transition-colors flex items-center justify-center gap-2"
+          >
+            <ImageIcon className="w-5 h-5" />
+            Add Images
+          </button>
+
           <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-[#13505b] hover:bg-[#13505b]/5 rounded-lg transition-colors"
-            >
+            <button type="button" onClick={onClose} className="px-4 py-2 text-[#13505b] hover:bg-[#13505b]/5 rounded-lg transition-colors">
               Cancel
             </button>
             <button
@@ -174,4 +172,4 @@ const CreatePost = ({ userId, onClose }) => {
   );
 };
 
-export default CreatePost
+export default CreatePost;

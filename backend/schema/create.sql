@@ -49,6 +49,14 @@ CREATE TABLE posts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- POST_IMAGES TABLE (Multiple images per post)
+CREATE TABLE post_images (
+    image_id SERIAL PRIMARY KEY,
+    post_id INT REFERENCES posts(post_id) ON DELETE CASCADE, -- Link to the post
+    image_url VARCHAR(255) NOT NULL, -- S3 URL
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Optional
+);
+
 -- LIKES TABLE (Tracking likes on posts)
 CREATE TABLE likes (
     like_id SERIAL PRIMARY KEY,
