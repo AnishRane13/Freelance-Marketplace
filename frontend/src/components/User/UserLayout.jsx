@@ -5,7 +5,7 @@ import UserNavbar from './UserNavbar';
 const UserLayout = () => (
   <div>
     <UserNavbar />
-    <Outlet />
+    {/* <Outlet /> */}
   </div>
 );
 

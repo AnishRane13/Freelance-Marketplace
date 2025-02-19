@@ -1,10 +1,10 @@
-import { Outlet } from 'react-router-dom';
+// import { Outlet } from 'react-router-dom';
 import CompanyNavbar from './CompanyNavbar';
 
 const CompanyLayout = () => (
   <div>
     <CompanyNavbar />
-    <Outlet />
+    {/* <Outlet /> */}
   </div>
 );
 
