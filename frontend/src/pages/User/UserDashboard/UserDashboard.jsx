@@ -1,76 +1,88 @@
 import { useEffect, useState } from "react";
 import Modal from "../../../components/Modal";
-import { Settings, Layout, Edit2, AlertCircle, LogOut, User, Mail, Calendar } from "lucide-react";
+import io from "socket.io-client";
+import { Heart, MessageCircle, Share2, Image } from "lucide-react";
 
 const UserDashboard = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userData, setUserData] = useState({
-    name: "User",
-    email: "",
-    created_at: "",
-    profile_picture: null
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userId = localStorage.getItem("user_id");
-        const token = localStorage.getItem("token");
-  
-        if (!userId || !token) {
-          window.location.href = "/login";
-          return;
-        }
-        
-        const areCategoriesSelected = localStorage.getItem("categoriesSelected");
-  
-        if (areCategoriesSelected !== "true") {
-          setIsModalOpen(true);
-        } 
-  
-        // Fetch user data
-        const userResponse = await fetch(`http://localhost:5000/users/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        const userData = await userResponse.json();
-        if (userData.success) {
-          // Update the user data state with all fields from API
-          setUserData({
-            name: userData.user.name,
-            email: userData.user.email,
-            created_at: new Date(userData.user.created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long'
-            }),
-            profile_picture: userData.user.profile_picture,
-            bio: userData.user.bio,
-            user_type: userData.user.user_type
-          });
-  
-          // Update categories if they exist
-          if (userData.user.categories && Array.isArray(userData.user.categories)) {
-            setSelectedCategories(userData.user.categories);
-            // Update localStorage only if categories exist
-            if (userData.user.categories.length > 0) {
-              localStorage.setItem("categoriesSelected", "true");
-            }
-          }
-        }
-        
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    fetchUserData();
+    // Connect to WebSocket
+    const socketInstance = io("http://localhost:5000");
+    setSocket(socketInstance);
+
+    // WebSocket event listeners
+    socketInstance.on("post_created", (newPost) => {
+      setPosts(prevPosts => [newPost, ...prevPosts]);
+    });
+
+    socketInstance.on("like_updated", ({ postId, likesCount }) => {
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post.post_id === postId
+            ? { ...post, likes_count: likesCount }
+            : post
+        )
+      );
+    });
+
+    socketInstance.on("comment_added", ({ postId, comment }) => {
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post.post_id === postId
+            ? { 
+                ...post, 
+                comments_count: post.comments_count + 1,
+                latest_comment: comment 
+              }
+            : post
+        )
+      );
+    });
+
+    return () => socketInstance.disconnect();
   }, []);
+
+  useEffect(() => {
+    const areCategoriesSelected = localStorage.getItem("categoriesSelected");
+    if (areCategoriesSelected !== "true") {
+      setIsModalOpen(true);
+    }
+    fetchPosts();
+  }, [selectedCategories]);
+
+  const fetchPosts = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const url = selectedCategories.length > 0
+        ? `http://localhost:5000/posts/filtered`
+        : `http://localhost:5000/posts`;
+      
+      const response = await fetch(url, {
+        method: selectedCategories.length > 0 ? 'POST' : 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        ...(selectedCategories.length > 0 && {
+          body: JSON.stringify({ categories: selectedCategories })
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setPosts(data.posts);
+      }
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSaveCategories = async (categories) => {
     try {
@@ -87,130 +99,117 @@ const UserDashboard = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
-          id: user_id, 
-          type: userType, 
-          categories 
+        body: JSON.stringify({
+          id: user_id,
+          type: userType,
+          categories,
         }),
       });
 
       const data = await response.json();
       if (data.success) {
         setSelectedCategories(categories);
+        localStorage.setItem("categoriesSelected", "true");
         setIsModalOpen(false);
-      } else {
-        console.error("Error saving categories:", data.error);
       }
     } catch (error) {
       console.error("Failed to save categories:", error);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#13505b] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+  const handleLike = async (postId) => {
+    try {
+      const userId = localStorage.getItem("user_id");
+      socket.emit("toggle_like", {
+        userId,
+        postId,
+        isLiking: true
+      });
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+  };
+
+  const Post = ({ post }) => (
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      {/* Post Header */}
+      <div className="p-4 flex items-center space-x-3">
+        <img
+          src={post.profile_picture || '/default-avatar.png'}
+          alt={post.user_name}
+          className="w-10 h-10 rounded-full object-cover"
+        />
+        <div>
+          <h3 className="font-semibold text-[#13505b]">{post.user_name}</h3>
+          <span className="text-sm text-gray-500">{post.category_name}</span>
+        </div>
       </div>
-    );
-  }
+
+      {/* Post Content */}
+      <div className="px-4 py-2">
+        <p className="text-gray-800">{post.content}</p>
+      </div>
+
+      {/* Post Images */}
+      {post.images && post.images.length > 0 && (
+        <div className="flex overflow-x-auto scrollbar-hide">
+          {post.images.map((image, index) => (
+            <img
+              key={index}
+              src={image.image_url}
+              alt={`Post image ${index + 1}`}
+              className="w-full h-64 object-cover"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Post Actions */}
+      <div className="p-4 flex items-center justify-between border-t">
+        <button
+          onClick={() => handleLike(post.post_id)}
+          className="flex items-center space-x-2 text-gray-600 hover:text-red-500"
+        >
+          <Heart className="w-5 h-5" />
+          <span>{post.likes_count}</span>
+        </button>
+        <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-500">
+          <MessageCircle className="w-5 h-5" />
+          <span>{post.comments_count}</span>
+        </button>
+        <button className="flex items-center space-x-2 text-gray-600 hover:text-green-500">
+          <Share2 className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#13505b] p-4 sm:p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-              Welcome back, {userData.name}
-            </h1>
-          </div>
-        
-        </div>
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Categories Card */}
-          <div className="bg-white/80 p-4 sm:p-6 rounded-2xl border border-white/20 shadow-md">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg sm:text-xl font-semibold text-[#13505b]">Your Categories</h2>
-              <Layout className="w-5 h-5 text-[#119da4]" />
-            </div>
-            {selectedCategories.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {selectedCategories.map((category) => (
-                  <span
-                    key={category}
-                    className="px-3 py-1 bg-[#119da4]/10 text-[#119da4] rounded-full text-sm font-medium"
-                  >
-                    {category}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-[#13505b]/60">
-                <AlertCircle className="w-4 h-4" />
-                <p>No categories selected</p>
-              </div>
-            )}
-          </div>
-
-          {/* Profile Details Card */}
-          <div className="bg-white/80 p-4 sm:p-6 rounded-2xl border border-white/20 shadow-md">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg sm:text-xl font-semibold text-[#13505b]">Profile Details</h2>
-              <Edit2 className="w-5 h-5 text-[#119da4]" />
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-[#119da4]" />
-                <div>
-                  <label className="text-sm text-[#13505b]/60">Name</label>
-                  <p className="text-[#13505b]">{userData.name}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-[#119da4]" />
-                <div>
-                  <label className="text-sm text-[#13505b]/60">Email</label>
-                  <p className="text-[#13505b]">{userData.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#119da4]" />
-                <div>
-                  <label className="text-sm text-[#13505b]/60">Member Since</label>
-                  <p className="text-[#13505b]">{userData.created_at}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats Card */}
-          <div className="bg-white/80 p-4 sm:p-6 rounded-2xl border border-white/20 shadow-md">
-            <h2 className="text-lg sm:text-xl font-semibold text-[#13505b] mb-3">Quick Stats</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 sm:p-4 bg-[#119da4]/10 rounded-xl">
-                <p className="text-sm text-[#13505b]/60">Categories</p>
-                <p className="text-xl sm:text-2xl font-bold text-[#119da4]">{selectedCategories.length}</p>
-              </div>
-              <div className="p-3 sm:p-4 bg-[#119da4]/10 rounded-xl">
-                <p className="text-sm text-[#13505b]/60">Last Updated</p>
-                <p className="text-xl sm:text-2xl font-bold text-[#119da4]">Today</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Categories Modal */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         onSave={handleSaveCategories}
         initialCategories={selectedCategories}
       />
+
+      {/* Main Content */}
+      <div className="max-w-3xl mx-auto space-y-6">
+        {loading ? (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+        ) : posts.length > 0 ? (
+          posts.map(post => <Post key={post.post_id} post={post} />)
+        ) : (
+          <div className="text-center text-white py-8">
+            <p>No posts found. Follow some categories to see posts!</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

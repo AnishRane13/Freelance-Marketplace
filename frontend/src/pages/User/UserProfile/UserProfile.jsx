@@ -1,22 +1,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  User,
-  Mail,
-  Calendar,
-  MapPin,
-  Globe,
-  FileText,
-  Layout,
-  Building2,
-  Pencil,
-  Check,
-  X,
-  Upload,
-  Camera,
-  Plus,
-} from "lucide-react";
+import {Building2,Camera,Check,Pencil,Plus,Upload,X,} from "lucide-react";
 import CreatePost from "../../../components/CreatePost";
 
 const UserProfile = () => {
@@ -28,19 +13,6 @@ const UserProfile = () => {
   const [tempData, setTempData] = useState({});
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [toasts, setToasts] = useState([]);
-
-  const categoryMap = {
-    1: "Technology",
-    2: "Marketing",
-    3: "Design",
-    4: "Development",
-    5: "Writing",
-    6: "Business",
-    7: "Customer Service",
-    8: "Sales",
-    9: "Finance",
-    10: "Project Management",
-  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -164,7 +136,6 @@ const UserProfile = () => {
     }
   };
 
-  // File input ref for image uploads
   const fileInputRef = React.useRef(null);
 
   const triggerFileInput = (type) => {
@@ -192,6 +163,7 @@ const UserProfile = () => {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-[#13505b]">
       <input
@@ -341,273 +313,7 @@ const UserProfile = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Left Column - Contact Info */}
-          <div className="space-y-6">
-            <div className="bg-white/90 rounded-xl p-6 backdrop-blur-sm">
-              <h2 className="text-[#13505b] font-semibold text-lg mb-4">
-                Contact Information
-              </h2>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 text-[#0c7489]">
-                    <Mail className="w-5 h-5" />
-                    <span>{userData.email}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 text-[#0c7489]">
-                    <MapPin className="w-5 h-5" />
-                    {editMode.location ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={tempData.location || ""}
-                          onChange={(e) =>
-                            handleChange("location", e.target.value)
-                          }
-                          placeholder="Add location"
-                          className="bg-white text-[#13505b] px-3 py-1 rounded"
-                        />
-                        <button onClick={() => handleSave("location")}>
-                          <Check className="w-5 h-5 text-green-500" />
-                        </button>
-                        <button onClick={() => handleCancel("location")}>
-                          <X className="w-5 h-5 text-red-500" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <span>{userData.location || "Add location"}</span>
-                        <button onClick={() => handleEdit("location")}>
-                          <Pencil className="w-4 h-4 text-[#119da4]" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 text-[#0c7489]">
-                    <Globe className="w-5 h-5" />
-                    {editMode.website ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={tempData.website || ""}
-                          onChange={(e) =>
-                            handleChange("website", e.target.value)
-                          }
-                          placeholder="Add website"
-                          className="bg-white text-[#13505b] px-3 py-1 rounded"
-                        />
-                        <button onClick={() => handleSave("website")}>
-                          <Check className="w-5 h-5 text-green-500" />
-                        </button>
-                        <button onClick={() => handleCancel("website")}>
-                          <X className="w-5 h-5 text-red-500" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <span>{userData.website || "Add website"}</span>
-                        <button onClick={() => handleEdit("website")}>
-                          <Pencil className="w-4 h-4 text-[#119da4]" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 text-[#0c7489]">
-                  <Calendar className="w-5 h-5" />
-                  <span>
-                    Joined{" "}
-                    {new Date(userData.created_at).toLocaleDateString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Categories Section (continuing from previous code) */}
-            <div className="bg-white/90 rounded-xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[#13505b] font-semibold text-lg">
-                  Expertise Areas
-                </h2>
-                <button
-                  onClick={() => handleEdit("categories")}
-                  className="text-[#119da4] hover:text-[#0c7489]"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              </div>
-
-              {editMode.categories ? (
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(categoryMap).map(([id, name]) => (
-                      <button
-                        key={id}
-                        onClick={() => {
-                          const categories = tempData.categories || [];
-                          const numId = parseInt(id);
-                          if (categories.includes(numId)) {
-                            handleChange(
-                              "categories",
-                              categories.filter((c) => c !== numId)
-                            );
-                          } else {
-                            handleChange("categories", [...categories, numId]);
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          (tempData.categories || []).includes(parseInt(id))
-                            ? "bg-[#119da4] text-white"
-                            : "bg-[#119da4]/10 text-[#0c7489]"
-                        }`}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      onClick={() => handleSave("categories")}
-                      className="px-4 py-2 bg-[#119da4] text-white rounded-lg hover:bg-[#0c7489] transition-colors"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => handleCancel("categories")}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {(userData.categories || []).map((categoryId) => (
-                    <span
-                      key={categoryId}
-                      className="px-3 py-1.5 bg-[#119da4]/10 text-[#0c7489] rounded-lg text-sm font-medium"
-                    >
-                      {categoryMap[categoryId]}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - About */}
-          <div className="md:col-span-2">
-            <div className="bg-white/90 rounded-xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[#13505b] font-semibold text-lg">About</h2>
-                <button
-                  onClick={() => handleEdit("description")}
-                  className="text-[#119da4] hover:text-[#0c7489]"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              </div>
-
-              {editMode.description ? (
-                <div className="space-y-3">
-                  <textarea
-                    value={tempData.description || ""}
-                    onChange={(e) =>
-                      handleChange("description", e.target.value)
-                    }
-                    placeholder="Tell people about you..."
-                    className="w-full h-48 p-3 bg-white rounded-lg border border-[#119da4] text-[#13505b] focus:outline-none focus:ring-2 focus:ring-[#119da4]"
-                  />
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      onClick={() => handleSave("description")}
-                      className="px-4 py-2 bg-[#119da4] text-white rounded-lg hover:bg-[#0c7489] transition-colors"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => handleCancel("description")}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-[#040404]/80">
-                  {userData.description || (
-                    <div className="space-y-4">
-                      <p>
-                        Welcome to {userData.name}! We specialize in delivering
-                        innovative solutions across multiple domains including{" "}
-                        {(userData.categories || [])
-                          .map((id) => categoryMap[id])
-                          .slice(0, 3)
-                          .join(", ")}
-                        , and more.
-                      </p>
-                      <p>
-                        Click the edit button to add a detailed description
-                        about your company, including your mission, values, and
-                        what makes your organization unique.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Projects/Portfolio Section */}
-            <div className="mt-6 bg-white/90 rounded-xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[#13505b] font-semibold text-lg">
-                  Portfolio Highlights
-                </h2>
-                <button className="px-4 py-2 bg-[#119da4] text-white rounded-lg hover:bg-[#0c7489] transition-colors flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Project
-                </button>
-              </div>
-
-              {userData.projects && userData.projects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {userData.projects.map((project, index) => (
-                    <div
-                      key={index}
-                      className="border border-[#119da4]/20 rounded-lg p-4"
-                    >
-                      <h3 className="text-[#13505b] font-medium mb-2">
-                        {project.title}
-                      </h3>
-                      <p className="text-[#040404]/70 text-sm">
-                        {project.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-[#040404]/60">
-                  <FileText className="w-12 h-12 mx-auto mb-3 text-[#119da4]" />
-                  <p>No projects added yet.</p>
-                  <p className="text-sm">
-                    Showcase your work by adding portfolio items.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
       </div>
 
       {/* Toast Notifications */}
@@ -625,11 +331,8 @@ const UserProfile = () => {
       </div>
 
       {showCreatePost && (
-  <CreatePost 
-    userId={user_id} 
-    onClose={() => setShowCreatePost(false)} 
-  />
-)}
+        <CreatePost userId={user_id} onClose={() => setShowCreatePost(false)} />
+      )}
     </div>
   );
 };

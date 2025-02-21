@@ -1,6 +1,7 @@
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { v4: uuidv4 } = require("uuid");
 const { createPost, savePostImages } = require("../../models/posts/createPost");
+const { getPostWithDetails } = require("../sockerHandlers")
 
 // Configure S3
 const s3 = new S3Client({
@@ -31,45 +32,47 @@ const uploadToS3 = async (file, postId) => {
 
 // Controller for creating a post with multiple images
 const createPostWithImagesController = async (req, res) => {
-    let { userId, content, category_id } = req.body;
-  
-    console.log(req.body);
-    console.log(typeof(category_id))
-  
-    if (!userId || !content) {
-      return res.status(400).json({ success: false, message: "User ID and content are required" });
-    }
-  
-    // Ensure categoryId is treated as an integer
-    categoryId = parseInt(category_id, 10);
-  
-    try {
-      // Step 1: Create the post
-      const postId = await createPost(userId, content, category_id);
-  
-      // Step 2: Upload images if provided
-      let imageUrls = [];
-      if (req.files && req.files.length > 0) {
-        for (const file of req.files) {
-          const imageUrl = await uploadToS3(file, postId);
-          imageUrls.push(imageUrl);
-        }
-  
-        // Step 3: Save image URLs to the database
-        await savePostImages(postId, imageUrls);
+  let { userId, content, category_id } = req.body;
+
+  if (!userId || !content) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "User ID and content are required" 
+    });
+  }
+
+  try {
+    const postId = await createPost(userId, content, category_id);
+
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const imageUrl = await uploadToS3(file, postId);
+        imageUrls.push(imageUrl);
       }
-  
-      res.status(201).json({
-        success: true,
-        message: "Post created successfully",
-        postId,
-        imageUrls,
-      });
-    } catch (error) {
-      console.error("Error creating post with images:", error);
-      res.status(500).json({ success: false, message: "Error creating post with images" });
+      await savePostImages(postId, imageUrls);
     }
-  };
+
+    // Get the complete post data with all details
+    const postData = await getPostWithDetails(postId);
+
+    // Emit socket event for real-time update
+    req.app.get('io').emit('post_created', postData);
+
+    res.status(201).json({
+      success: true,
+      message: "Post created successfully",
+      post: postData
+    });
+  } catch (error) {
+    console.error("Error creating post with images:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error creating post with images" 
+    });
+  }
+};
+
   
 module.exports = {
   createPostWithImagesController,
