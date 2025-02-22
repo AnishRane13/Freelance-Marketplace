@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
-import Modal from "../../../components/Modal";
+import { useState, useEffect } from "react";
 import io from "socket.io-client";
-import { Heart, MessageCircle, Share2, Image } from "lucide-react";
+import Modal from "../../../components/Modal";
+import Post from "../../../components/Post/Post";
+import LoadingSpinner from "../../../components/LoadingSpinner";
+import EmptyState from "../../../components/EmptyState";
 
 const UserDashboard = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -13,37 +15,32 @@ const UserDashboard = () => {
   const user_id = localStorage.getItem('user_id');
 
   useEffect(() => {
-    // Connect to WebSocket
     const socketInstance = io("http://localhost:5000");
     setSocket(socketInstance);
 
-    // WebSocket event listeners
     socketInstance.on("post_created", (newPost) => {
       setPosts(prevPosts => [newPost, ...prevPosts]);
     });
 
-    socketInstance.on("like_updated", ({ postId, likesCount }) => {
+    socketInstance.on("like_updated", ({ postId, likesCount, updatedPost }) => {
       setPosts(prevPosts =>
         prevPosts.map(post =>
-          post.post_id === postId
-            ? { ...post, likes_count: likesCount }
-            : post
+          post.post_id === postId ? updatedPost : post
         )
       );
     });
 
-    socketInstance.on("comment_added", ({ postId, comment }) => {
+    socketInstance.on("comment_added", ({ postId, updatedPost }) => {
       setPosts(prevPosts =>
         prevPosts.map(post =>
-          post.post_id === postId
-            ? { 
-                ...post, 
-                comments_count: post.comments_count + 1,
-                latest_comment: comment 
-              }
-            : post
+          post.post_id === postId ? updatedPost : post
         )
       );
+    });
+
+    socketInstance.on("error", (error) => {
+      console.error("Socket error:", error);
+      // You might want to show an error toast here
     });
 
     return () => socketInstance.disconnect();
@@ -61,8 +58,8 @@ const UserDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const url = selectedCategories.length > 0
-      ? `http://localhost:5000/posts/filtered?user_id=${user_id}`
-      : `http://localhost:5000/posts?user_id=${user_id}`;    
+        ? `http://localhost:5000/posts/filtered?user_id=${user_id}`
+        : `http://localhost:5000/posts?user_id=${user_id}`;    
       
       const response = await fetch(url, {
         method: selectedCategories.length > 0 ? 'POST' : 'GET',
@@ -76,7 +73,6 @@ const UserDashboard = () => {
       });
 
       const data = await response.json();
-      console.log("These are the posts", data)
       if (data.success) {
         setPosts(data.posts);
       }
@@ -125,73 +121,33 @@ const UserDashboard = () => {
   const handleLike = async (postId) => {
     try {
       const userId = localStorage.getItem("user_id");
+      const post = posts.find(p => p.post_id === postId);
+      
       socket.emit("toggle_like", {
         userId,
         postId,
-        isLiking: true
+        isLiking: !post.is_liked // Toggle the like status
       });
     } catch (error) {
       console.error("Error liking post:", error);
     }
   };
 
-  const Post = ({ post }) => (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      {/* Post Header */}
-      <div className="p-4 flex items-center space-x-3">
-        <img
-          src={post.profile_picture || '/default-avatar.png'}
-          alt={post.user_name}
-          className="w-10 h-10 rounded-full object-cover"
-        />
-        <div>
-          <h3 className="font-semibold text-[#13505b]">{post.user_name}</h3>
-          <span className="text-sm text-gray-500">{post.category_name}</span>
-        </div>
-      </div>
-
-      {/* Post Content */}
-      <div className="px-4 py-2">
-        <p className="text-gray-800">{post.content}</p>
-      </div>
-
-      {/* Post Images */}
-      {post.images && post.images.length > 0 && (
-        <div className="flex overflow-x-auto scrollbar-hide">
-          {post.images.map((image, index) => (
-            <img
-              key={index}
-              src={image.image_url}
-              alt={`Post image ${index + 1}`}
-              className="w-full h-64 object-cover"
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Post Actions */}
-      <div className="p-4 flex items-center justify-between border-t">
-        <button
-          onClick={() => handleLike(post.post_id)}
-          className="flex items-center space-x-2 text-gray-600 hover:text-red-500"
-        >
-          <Heart className="w-5 h-5" />
-          <span>{post.likes_count}</span>
-        </button>
-        <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-500">
-          <MessageCircle className="w-5 h-5" />
-          <span>{post.comments_count}</span>
-        </button>
-        <button className="flex items-center space-x-2 text-gray-600 hover:text-green-500">
-          <Share2 className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-  );
+  const handleComment = async (postId, comment) => {
+    try {
+      const userId = localStorage.getItem("user_id");
+      socket.emit("new_comment", {
+        userId,
+        postId,
+        comment
+      });
+    } catch (error) {
+      console.error("Error adding comment:", error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#13505b] p-4 sm:p-6">
-      {/* Categories Modal */}
+    <div className="min-h-screen bg-gradient-to-b from-[#13505b] to-[#0a2e33] p-4 sm:p-6">
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -199,18 +155,20 @@ const UserDashboard = () => {
         initialCategories={selectedCategories}
       />
 
-      {/* Main Content */}
       <div className="max-w-3xl mx-auto space-y-6">
         {loading ? (
-          <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-          </div>
+          <LoadingSpinner />
         ) : posts.length > 0 ? (
-          posts.map(post => <Post key={post.post_id} post={post} />)
+          posts.map(post => (
+            <Post 
+              key={post.post_id} 
+              post={post} 
+              onLike={handleLike}
+              onComment={handleComment}
+            />
+          ))
         ) : (
-          <div className="text-center text-white py-8">
-            <p>No posts found. Follow some categories to see posts!</p>
-          </div>
+          <EmptyState />
         )}
       </div>
     </div>
