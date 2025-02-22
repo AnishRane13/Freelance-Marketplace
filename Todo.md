@@ -10,6 +10,7 @@ color themes
 
 
 
-Persistent Session management is done
-/api/posts/${userId} (POST) - for creating new posts   -- Pending
-/categories/${userId} (GET) - for fetching categories  --- This is done on the backend and on the frontend as well 
+
+
+Post now can be seen on the dashboard
+Improve UI for showing multiple images in the post

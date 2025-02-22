@@ -10,6 +10,8 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [socket, setSocket] = useState(null);
 
+  const user_id = localStorage.getItem('user_id');
+
   useEffect(() => {
     // Connect to WebSocket
     const socketInstance = io("http://localhost:5000");
@@ -59,8 +61,8 @@ const UserDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const url = selectedCategories.length > 0
-        ? `http://localhost:5000/posts/filtered`
-        : `http://localhost:5000/posts`;
+      ? `http://localhost:5000/posts/filtered?user_id=${user_id}`
+      : `http://localhost:5000/posts?user_id=${user_id}`;    
       
       const response = await fetch(url, {
         method: selectedCategories.length > 0 ? 'POST' : 'GET',
@@ -74,6 +76,7 @@ const UserDashboard = () => {
       });
 
       const data = await response.json();
+      console.log("These are the posts", data)
       if (data.success) {
         setPosts(data.posts);
       }

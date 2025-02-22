@@ -65,7 +65,7 @@ const addComment = async (userId, postId, comment) => {
   return result.rows[0];
 };
 
-const getPostsWithDetails = async () => {
+const getPostsWithDetails = async (user_id) => {
   const query = `
     SELECT 
       p.*,
@@ -82,13 +82,14 @@ const getPostsWithDetails = async () => {
     FROM posts p
     JOIN users u ON p.user_id = u.user_id
     LEFT JOIN categories c ON p.category_id = c.category_id
+    WHERE p.user_id = $1
     ORDER BY p.created_at DESC`;
-  
-  const result = await pool.query(query);
+
+  const result = await pool.query(query, [user_id]);
   return result.rows;
 };
 
-const getFilteredPosts = async (categoryIds) => {
+const getFilteredPosts = async (categoryIds, user_id) => {
   const query = `
     SELECT 
       p.*,
@@ -106,11 +107,13 @@ const getFilteredPosts = async (categoryIds) => {
     JOIN users u ON p.user_id = u.user_id
     LEFT JOIN categories c ON p.category_id = c.category_id
     WHERE p.category_id = ANY($1)
+      AND p.user_id = $2 -- Fetches only the logged-in user's posts
     ORDER BY p.created_at DESC`;
-  
-  const result = await pool.query(query, [categoryIds]);
+
+  const result = await pool.query(query, [categoryIds, user_id]);
   return result.rows;
 };
+
 
 module.exports = {
   addLike,
