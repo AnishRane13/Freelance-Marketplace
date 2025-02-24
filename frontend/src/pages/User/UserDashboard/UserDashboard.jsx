@@ -30,11 +30,26 @@ const UserDashboard = () => {
       );
     });
 
-    socketInstance.on("comment_added", ({ postId, updatedPost }) => {
+    socketInstance.on("comment_added", ({ postId, comment, updatedPost }) => {
       setPosts(prevPosts =>
-        prevPosts.map(post =>
-          post.post_id === postId ? updatedPost : post
-        )
+        prevPosts.map(post => {
+          if (post.post_id === postId) {
+            // If the post doesn't have comments array yet, create it
+            if (!post.comments) {
+              updatedPost.comments = [comment];
+            } 
+            // If we haven't loaded the full updated post yet, at least add the new comment
+            else if (!updatedPost.comments) {
+              const updatedPostWithComments = {
+                ...updatedPost,
+                comments: [...post.comments, comment]
+              };
+              return updatedPostWithComments;
+            }
+            return updatedPost;
+          }
+          return post;
+        })
       );
     });
 
@@ -165,6 +180,7 @@ const UserDashboard = () => {
               post={post} 
               onLike={handleLike}
               onComment={handleComment}
+              socket={socket}
             />
           ))
         ) : (

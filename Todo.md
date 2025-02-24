@@ -11,6 +11,4 @@ color themes
 
 
 
-
-Post now can be seen on the dashboard
-Improve UI for showing multiple images in the post
+Implement the Post section on the company side. 

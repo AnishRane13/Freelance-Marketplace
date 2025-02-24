@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { navLinks } from './NavigationLinks';
 
@@ -6,7 +5,7 @@ const MobileBottomNav = () => {
   const location = useLocation();
   
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50">
       <div className="flex justify-around items-center h-16">
         {navLinks.map((link) => (
           <Link

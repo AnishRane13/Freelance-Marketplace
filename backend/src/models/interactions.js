@@ -2,7 +2,8 @@
 const pool = require("../../db/db");
 
 const getPostWithDetails = async (postId) => {
-  const query = `
+  // First, get the post details
+  const postQuery = `
     SELECT 
       p.*,
       u.name as user_name,
@@ -20,18 +21,63 @@ const getPostWithDetails = async (postId) => {
     LEFT JOIN categories c ON p.category_id = c.category_id
     WHERE p.post_id = $1`;
   
+  const postResult = await pool.query(postQuery, [postId]);
+  const post = postResult.rows[0];
+  
+  if (!post) return null;
+  
+  // Then, get the comments for this post
+  const commentsQuery = `
+    SELECT 
+      c.comment_id,
+      c.user_id,
+      c.comment,
+      c.created_at,
+      u.name as user_name,
+      u.profile_picture as user_profile
+    FROM comments c
+    JOIN users u ON c.user_id = u.user_id
+    WHERE c.post_id = $1
+    ORDER BY c.created_at ASC`;
+  
+  const commentsResult = await pool.query(commentsQuery, [postId]);
+  
+  // Add comments to the post object
+  post.comments = commentsResult.rows;
+  
+  return post;
+};
+
+
+const getCommentsByPostId = async (postId) => {
+  const query = `
+    SELECT 
+      c.comment_id,
+      c.comment,
+      c.created_at,
+      c.user_id,
+      u.name as user_name,
+      u.profile_picture as user_profile
+    FROM comments c
+    JOIN users u ON c.user_id = u.user_id
+    WHERE c.post_id = $1
+    ORDER BY c.created_at ASC`;
+  
   const result = await pool.query(query, [postId]);
-  return result.rows[0];
+  return result.rows;
 };
 
 const addLike = async (userId, postId) => {
   const query = `
     INSERT INTO likes (user_id, post_id)
     VALUES ($1, $2)
+    ON CONFLICT (user_id, post_id) DO NOTHING
     RETURNING like_id`;
+  
   const result = await pool.query(query, [userId, postId]);
-  return result.rows[0];
+  return result.rows[0] || null; // If like already exists, return null
 };
+
 
 const removeLike = async (userId, postId) => {
   const query = `
@@ -56,13 +102,28 @@ const addComment = async (userId, postId, comment) => {
     INSERT INTO comments (user_id, post_id, comment)
     VALUES ($1, $2, $3)
     RETURNING 
-      comment_id,
-      comment,
-      created_at,
-      (SELECT name FROM users WHERE user_id = $1) as user_name,
-      (SELECT profile_picture FROM users WHERE user_id = $1) as user_profile`;
+        comment_id,
+        user_id,
+        comment,
+        created_at;
+  `;
+
   const result = await pool.query(query, [userId, postId, comment]);
-  return result.rows[0];
+  
+  // Get user details separately to match the schema
+  const userQuery = `
+    SELECT name as user_name, profile_picture as user_profile
+    FROM users 
+    WHERE user_id = $1;
+  `;
+  
+  const userResult = await pool.query(userQuery, [userId]);
+  
+  // Combine the results
+  return {
+    ...result.rows[0],
+    ...userResult.rows[0]
+  };
 };
 
 const getPostsWithDetails = async (user_id) => {
@@ -120,6 +181,7 @@ module.exports = {
   removeLike,
   getLikesCount,
   addComment,
+  getCommentsByPostId,
   getPostWithDetails,
   getPostsWithDetails,
   getFilteredPosts

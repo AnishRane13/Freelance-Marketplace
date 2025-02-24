@@ -1,15 +1,50 @@
-import { useState } from 'react';
-import PostHeader from '../Post/PostHeader';
-import PostContent from '../Post/PostContent';
-import PostActions from '../Post/PostActions';
-import ImageCarousel from '../Post/ImageCarousel';
+import { useState, useEffect } from 'react';
+import PostHeader from './PostHeader';
+import PostContent from './PostContent';
+import PostActions from './PostActions';
+import ImageCarousel from './ImageCarousel';
 import CommentSection from './CommentSection';
 
-const Post = ({ post, onLike, onComment }) => {
+const Post = ({ post, onLike, onComment, socket }) => {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [localComments, setLocalComments] = useState(post.comments || []);
+  
+  // Update local comments when post comments change
+  useEffect(() => {
+    if (post.comments) {
+      setLocalComments(post.comments);
+    }
+  }, [post.comments]);
+
+  // Listen for new comments on this specific post
+  useEffect(() => {
+    if (socket && isCommentsOpen) {
+      // If we open the comments and there are none loaded yet, fetch them
+      if (!post.comments || post.comments.length === 0) {
+        socket.emit("fetch_comments", { postId: post.post_id });
+      }
+      
+      // Set up the listener for fetched comments
+      const handleCommentsFetched = ({ postId, comments }) => {
+        if (postId === post.post_id) {
+          setLocalComments(comments);
+        }
+      };
+      
+      socket.on("comments_fetched", handleCommentsFetched);
+      
+      return () => {
+        socket.off("comments_fetched", handleCommentsFetched);
+      };
+    }
+  }, [socket, isCommentsOpen, post.post_id, post.comments]);
 
   const handleCommentClick = () => {
     setIsCommentsOpen(!isCommentsOpen);
+  };
+
+  const handleSubmitComment = (comment) => {
+    onComment(post.post_id, comment);
   };
 
   return (
@@ -18,9 +53,10 @@ const Post = ({ post, onLike, onComment }) => {
         user_name={post.user_name}
         profile_picture={post.profile_picture}
         category_name={post.category_name}
+        created_at={post.created_at}
       />
       <PostContent content={post.content} />
-      {post.images && <ImageCarousel images={post.images} />}
+      {post.images && post.images.length > 0 && <ImageCarousel images={post.images} />}
       <PostActions
         post_id={post.post_id}
         likes_count={post.likes_count}
@@ -31,8 +67,8 @@ const Post = ({ post, onLike, onComment }) => {
       />
       <CommentSection
         isOpen={isCommentsOpen}
-        comments={post.comments}
-        onSubmitComment={(comment) => onComment(post.post_id, comment)}
+        comments={localComments}
+        onSubmitComment={handleSubmitComment}
       />
     </div>
   );

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const CommentSection = ({ onSubmitComment, comments = [], isOpen }) => {
   const [newComment, setNewComment] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -12,24 +14,43 @@ const CommentSection = ({ onSubmitComment, comments = [], isOpen }) => {
     }
   };
 
+  const navigateToUserProfile = (userId) => {
+    navigate(`/user/profile/${userId}`);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="border-t border-gray-100 p-4">
-      <div className="space-y-4">
-        {comments.map((comment, index) => (
-          <div key={index} className="flex items-start space-x-3">
-            <img
-              src={comment.user_profile_picture || '/default-avatar.png'}
-              alt={comment.user_name}
-              className="w-8 h-8 rounded-full"
-            />
-            <div className="flex-1 bg-gray-50 rounded-lg p-3">
-              <p className="font-medium text-sm text-gray-900">{comment.user_name}</p>
-              <p className="text-gray-700 text-sm">{comment.content}</p>
+      <div className="space-y-4 max-h-64 overflow-y-auto">
+        {comments && comments.length > 0 ? (
+          comments.map((comment) => (
+            <div key={comment.comment_id} className="flex items-start space-x-3">
+              <img
+                src={comment.user_profile || '/default-avatar.png'}
+                alt={comment.user_name}
+                className="w-8 h-8 rounded-full object-cover cursor-pointer"
+                onClick={() => navigateToUserProfile(comment.user_id)}
+              />
+              <div className="flex-1 bg-gray-50 rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <p 
+                    className="font-medium text-sm text-gray-900 cursor-pointer hover:underline"
+                    onClick={() => navigateToUserProfile(comment.user_id)}
+                  >
+                    {comment.user_name}
+                  </p>
+                  <span className="text-xs text-gray-500">
+                    {new Date(comment.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="text-gray-700 text-sm mt-1">{comment.comment}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p className="text-center text-gray-500 text-sm py-2">No comments yet. Be the first to comment!</p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="mt-4 flex items-center space-x-2">
