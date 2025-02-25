@@ -126,54 +126,95 @@ const addComment = async (userId, postId, comment) => {
   };
 };
 
-const getPostsWithDetails = async (user_id) => {
-  const query = `
-    SELECT 
-      p.*,
-      u.name as user_name,
-      u.profile_picture,
-      c.name as category_name,
-      (SELECT COUNT(*) FROM likes WHERE post_id = p.post_id) as likes_count,
-      (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) as comments_count,
-      (
-        SELECT json_agg(pi.*)
-        FROM post_images pi
-        WHERE pi.post_id = p.post_id
-      ) as images
-    FROM posts p
-    JOIN users u ON p.user_id = u.user_id
-    LEFT JOIN categories c ON p.category_id = c.category_id
-    WHERE p.user_id = $1
-    ORDER BY p.created_at DESC`;
+const getPostsWithDetails = async () => {
+  console.log('Fetching all posts');
 
-  const result = await pool.query(query, [user_id]);
-  return result.rows;
+  try {
+    const query = `
+      SELECT 
+        p.*,
+        u.name AS user_name,
+        u.profile_picture,
+        (SELECT COUNT(*) FROM likes WHERE post_id = p.post_id) AS likes_count,
+        (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) AS comments_count,
+        (
+          SELECT COALESCE(json_agg(pi.*), '[]'::json)
+          FROM post_images pi
+          WHERE pi.post_id = p.post_id
+        ) AS images
+      FROM posts p
+      JOIN users u ON p.user_id = u.user_id
+      ORDER BY p.created_at DESC`;
+
+    console.log('Executing query...');
+    const result = await pool.query(query);
+    console.log(`Query returned ${result.rows.length} rows`);
+
+    return result.rows;
+  } catch (error) {
+    console.error('Error in getPostsWithDetails:', error);
+    throw error;
+  }
 };
 
-const getFilteredPosts = async (categoryIds, user_id) => {
-  const query = `
-    SELECT 
-      p.*,
-      u.name as user_name,
-      u.profile_picture,
-      c.name as category_name,
-      (SELECT COUNT(*) FROM likes WHERE post_id = p.post_id) as likes_count,
-      (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) as comments_count,
-      (
-        SELECT json_agg(pi.*)
-        FROM post_images pi
-        WHERE pi.post_id = p.post_id
-      ) as images
-    FROM posts p
-    JOIN users u ON p.user_id = u.user_id
-    LEFT JOIN categories c ON p.category_id = c.category_id
-    WHERE p.category_id = ANY($1)
-      AND p.user_id = $2 -- Fetches only the logged-in user's posts
-    ORDER BY p.created_at DESC`;
+const getFilteredPosts = async (user_id) => {
+  console.log('Fetching filtered posts for user:', user_id);
 
-  const result = await pool.query(query, [categoryIds, user_id]);
-  return result.rows;
+  try {
+    // Validate user_id
+    if (!user_id || isNaN(parseInt(user_id))) {
+      console.error('Invalid user_id:', user_id);
+      return [];
+    }
+
+    // Fetch user's selected categories
+    const categoryQuery = `SELECT categories FROM users WHERE user_id = $1`;
+    const categoryResult = await pool.query(categoryQuery, [parseInt(user_id)]);
+
+    if (!categoryResult.rows.length || !categoryResult.rows[0].categories.length) {
+      console.error('No categories found for user:', user_id);
+      return [];
+    }
+
+    const userCategories = categoryResult.rows[0].categories;
+    console.log('User selected categories:', userCategories);
+
+    // Fetch posts based on user's selected categories
+    const query = `
+      SELECT 
+        p.*,
+        u.name AS user_name,
+        u.profile_picture,
+        c.name AS category_name,
+        (SELECT COUNT(*) FROM likes WHERE post_id = p.post_id) AS likes_count,
+        (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) AS comments_count,
+        (
+          SELECT COALESCE(json_agg(pi.*), '[]'::json)
+          FROM post_images pi
+          WHERE pi.post_id = p.post_id
+        ) AS images
+      FROM posts p
+      JOIN users u ON p.user_id = u.user_id
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      WHERE p.category_id = ANY($1)
+      ORDER BY p.created_at DESC`;
+
+    console.log('Executing filtered query with:', userCategories);
+    const result = await pool.query(query, [userCategories]);
+    console.log(`Filtered query returned ${result.rows.length} rows`);
+
+    return result.rows;
+  } catch (error) {
+    console.error('Error in getFilteredPosts:', error);
+    throw error;
+  }
 };
+
+module.exports = {
+  getPostsWithDetails,
+  getFilteredPosts
+};
+
 
 
 module.exports = {

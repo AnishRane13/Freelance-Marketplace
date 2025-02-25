@@ -15,9 +15,11 @@ const UserDashboard = () => {
   const user_id = localStorage.getItem('user_id');
 
   useEffect(() => {
+    // Socket setup
     const socketInstance = io("http://localhost:5000");
     setSocket(socketInstance);
 
+    // Socket event listeners
     socketInstance.on("post_created", (newPost) => {
       setPosts(prevPosts => [newPost, ...prevPosts]);
     });
@@ -58,35 +60,37 @@ const UserDashboard = () => {
       // You might want to show an error toast here
     });
 
-    return () => socketInstance.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const areCategoriesSelected = localStorage.getItem("categoriesSelected");
-    if (areCategoriesSelected !== "true") {
+    // Check if categories are selected and fetch posts
+    const areCategoriesSelected = localStorage.getItem("categoriesSelected") === "true";
+    console.log("Categories selected:", areCategoriesSelected);
+    
+    if (!areCategoriesSelected) {
       setIsModalOpen(true);
     }
-    fetchPosts();
+    
+    fetchPosts(areCategoriesSelected);
+
+    // Cleanup function
+    return () => socketInstance.disconnect();
   }, [selectedCategories]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (areCategoriesSelected) => {
     try {
       const token = localStorage.getItem("token");
-      const url = selectedCategories.length > 0
+  
+      // Determine the correct API URL
+      const url = areCategoriesSelected
         ? `http://localhost:5000/posts/filtered?user_id=${user_id}`
-        : `http://localhost:5000/posts?user_id=${user_id}`;    
-      
+        : `http://localhost:5000/posts`;
+  
       const response = await fetch(url, {
-        method: selectedCategories.length > 0 ? 'POST' : 'GET',
+        method: "GET", // Always use GET now
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
-        },
-        ...(selectedCategories.length > 0 && {
-          body: JSON.stringify({ categories: selectedCategories })
-        })
+        }
       });
-
+  
       const data = await response.json();
       if (data.success) {
         setPosts(data.posts);
@@ -97,6 +101,7 @@ const UserDashboard = () => {
       setLoading(false);
     }
   };
+  
 
   const handleSaveCategories = async (categories) => {
     try {
@@ -160,6 +165,7 @@ const UserDashboard = () => {
       console.error("Error adding comment:", error);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#13505b] to-[#0a2e33] p-4 sm:p-6">

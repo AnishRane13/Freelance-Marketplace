@@ -21,8 +21,9 @@ const upload = multer({
 
 // Route for creating a post with multiple images
 router.post("/", upload.array("images"), createPostWithImagesController);
-router.get('/', authenticateToken, getPostsController);
-router.post('/filtered', authenticateToken, getFilteredPostsController);
+// Updated API calls
+router.get("/", authenticateToken, getPostsController);
+router.get("/filtered", authenticateToken, getFilteredPostsController);
 
 
 module.exports = router;
