@@ -11,3 +11,5 @@ color themes
 
 
 
+Fow now followers and following functionality is on hold
+
