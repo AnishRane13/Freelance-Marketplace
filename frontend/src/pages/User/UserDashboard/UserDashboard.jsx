@@ -102,6 +102,7 @@ const UserDashboard = () => {
     }
   };
   
+  // console.log("Heyeyey post",posts)
 
   const handleSaveCategories = async (categories) => {
     try {
@@ -184,6 +185,7 @@ const UserDashboard = () => {
             <Post 
               key={post.post_id} 
               post={post} 
+              userId={post.user_id}
               onLike={handleLike}
               onComment={handleComment}
               socket={socket}

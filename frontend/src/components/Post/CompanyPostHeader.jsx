@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 
-const PostHeader = ({ user_name, profile_picture, category_name, userId }) => (
+const CompanyPostHeader = ({ user_name, profile_picture, category_name, userId }) => (
   <div className="p-4 flex items-center space-x-3 border-b border-gray-100">
-    <Link to={`/user/profile/${userId}`} className="relative">
+    <Link to={`/company/profile/${userId}`} className="relative">
       <img
         src={profile_picture || '/default-avatar.png'}
         alt={user_name}
@@ -11,7 +11,7 @@ const PostHeader = ({ user_name, profile_picture, category_name, userId }) => (
       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
     </Link>
     <div>
-      <Link to={`/user/profile/${userId}`} className="hover:underline">
+      <Link to={`/company/profile/${userId}`} className="hover:underline">
         <h3 className="font-semibold text-[#13505b] cursor-pointer">{user_name}</h3>
       </Link>
       <span className="text-sm text-gray-500 flex items-center">
@@ -22,4 +22,4 @@ const PostHeader = ({ user_name, profile_picture, category_name, userId }) => (
   </div>
 );
 
-export default PostHeader;
+export default CompanyPostHeader;

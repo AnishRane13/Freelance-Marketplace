@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import PostHeader from './PostHeader';
+import CompanyPostHeader from './CompanyPostHeader';
 import PostContent from './PostContent';
 import PostActions from './PostActions';
 import ImageCarousel from './ImageCarousel';
 import CommentSection from './CommentSection';
 
-const Post = ({ post, onLike, onComment, socket, userId }) => {
+const CompanyPost = ({ post, onLike, onComment, socket, userId }) => {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [localComments, setLocalComments] = useState(post.comments || []);
   
@@ -49,7 +49,7 @@ const Post = ({ post, onLike, onComment, socket, userId }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-[1.02] transition-transform duration-200">
-      <PostHeader
+      <CompanyPostHeader
         user_name={post.user_name}
         userId={userId}
         profile_picture={post.profile_picture}
@@ -75,4 +75,4 @@ const Post = ({ post, onLike, onComment, socket, userId }) => {
   );
 };
 
-export default Post;
+export default CompanyPost;

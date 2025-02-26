@@ -127,7 +127,7 @@ const addComment = async (userId, postId, comment) => {
 };
 
 const getPostsWithDetails = async () => {
-  console.log('Fetching all posts');
+  // console.log('Fetching all posts');
 
   try {
     const query = `
@@ -146,9 +146,9 @@ const getPostsWithDetails = async () => {
       JOIN users u ON p.user_id = u.user_id
       ORDER BY p.created_at DESC`;
 
-    console.log('Executing query...');
+    // console.log('Executing query...');
     const result = await pool.query(query);
-    console.log(`Query returned ${result.rows.length} rows`);
+    // console.log(`Query returned ${result.rows.length} rows`);
 
     return result.rows;
   } catch (error) {
@@ -158,7 +158,7 @@ const getPostsWithDetails = async () => {
 };
 
 const getFilteredPosts = async (user_id) => {
-  console.log('Fetching filtered posts for user:', user_id);
+  // console.log('Fetching filtered posts for user:', user_id);
 
   try {
     // Validate user_id
@@ -177,7 +177,7 @@ const getFilteredPosts = async (user_id) => {
     }
 
     const userCategories = categoryResult.rows[0].categories;
-    console.log('User selected categories:', userCategories);
+    // console.log('User selected categories:', userCategories);
 
     // Fetch posts based on user's selected categories
     const query = `
@@ -199,9 +199,9 @@ const getFilteredPosts = async (user_id) => {
       WHERE p.category_id = ANY($1)
       ORDER BY p.created_at DESC`;
 
-    console.log('Executing filtered query with:', userCategories);
+    // console.log('Executing filtered query with:', userCategories);
     const result = await pool.query(query, [userCategories]);
-    console.log(`Filtered query returned ${result.rows.length} rows`);
+    // console.log(`Filtered query returned ${result.rows.length} rows`);
 
     return result.rows;
   } catch (error) {
