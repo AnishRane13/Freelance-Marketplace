@@ -175,7 +175,7 @@ const UserProfile = () => {
       />
 
       {/* Header Section */}
-      <div className="relative h-80">
+      <div className="relative h-96">
         {/* Cover Photo */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0c7489] to-[#119da4] overflow-hidden group">
           {userData.cover_photo ? (
@@ -211,9 +211,9 @@ const UserProfile = () => {
         </div>
 
         {/* Profile Section */}
-        <div className="absolute -bottom-16 left-8 flex items-end space-x-6">
+        <div className="absolute -bottom-32 left-20 flex items-end space-x-6">
           <div className="relative group">
-            <div className="w-32 h-32 rounded-xl bg-[#119da4] border-4 border-[#ffffff] overflow-hidden">
+            <div className="w-72 h-72 rounded-full bg-[#119da4] border-4 border-[#ffffff] overflow-hidden">
               {userData.profile_picture ? (
                 <img
                   src={userData.profile_picture}
@@ -228,9 +228,9 @@ const UserProfile = () => {
             </div>
             <button
               onClick={() => triggerFileInput("profile")}
-              className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
+              className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
             >
-              <Camera className="w-8 h-8 text-white" />
+              <Camera className="w-16 h-16 text-white" />
             </button>
           </div>
 
@@ -295,10 +295,15 @@ const UserProfile = () => {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-2 mt-2">
+              <div className="flex items-center space-x- mt-10">
                 <p className="text-white/90">
-                  {userData.bio || "Add a bio to tell people about your user"}
+                  {userData.bio }
                 </p>
+                <div>
+                <p className="text-white/90 -mt-10">
+                 {"Add a bioooooo to tell people about your user"}
+                </p>
+                </div>
                 <button
                   onClick={() => handleEdit("bio")}
                   className="text-white/70 hover:text-white"
