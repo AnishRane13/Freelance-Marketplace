@@ -78,6 +78,30 @@ export const FormFieldError = ({ message }) => {
   );
 };
 
+// Notifications Container Component
+export const NotificationsContainer = ({ notifications, removeNotification }) => {
+  return (
+    <>
+      {notifications.map((notification) => (
+        notification.type === 'success' ? (
+          <SuccessNotification
+            key={notification.id}
+            message={notification.message}
+            onClose={() => removeNotification(notification.id)}
+          />
+        ) : (
+          <ErrorNotification
+            key={notification.id}
+            message={notification.message}
+            onClose={() => removeNotification(notification.id)}
+          />
+        )
+      ))}
+      <NotificationStyles />
+    </>
+  );
+};
+
 // Animations Style
 const style = `
 @keyframes slide-in {

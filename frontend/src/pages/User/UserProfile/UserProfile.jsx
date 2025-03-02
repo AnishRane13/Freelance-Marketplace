@@ -1,8 +1,13 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import {Building2,Camera,Check,Pencil,Plus,Upload,X,} from "lucide-react";
+import { Plus } from "lucide-react";
+import ProfileHeader from "../../../components/User/UserProfile/ProfileHeader";
+import ProfileInfo from "../../../components/User/UserProfile/ProfileInfo";
+import UserPosts from "../../../components/User/UserProfile/UserPosts";
+import { NotificationsContainer } from "../../../components/Notification";
 import CreatePost from "../../../components/CreatePost";
+import Loader from "../../../components/Loader";
 
 const UserProfile = () => {
   const { user_id } = useParams();
@@ -12,7 +17,8 @@ const UserProfile = () => {
   const [editMode, setEditMode] = useState({});
   const [tempData, setTempData] = useState({});
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [toasts, setToasts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -30,11 +36,11 @@ const UserProfile = () => {
           setTempData(data.user);
         } else {
           setError("Failed to load user data");
-          showToast("error", "Failed to load user data");
+          showNotification("error", "Failed to load user data");
         }
       } catch (error) {
         setError("Error connecting to server");
-        showToast("error", "Error connecting to server");
+        showNotification("error", "Error connecting to server");
         console.error("Error fetching user data:", error);
       } finally {
         setIsLoading(false);
@@ -46,12 +52,14 @@ const UserProfile = () => {
     }
   }, [user_id]);
 
-  const showToast = (type, message) => {
+  const showNotification = (type, message) => {
     const id = Date.now();
-    setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, 3000);
+    setNotifications((prev) => [...prev, { id, type, message }]);
+    // Auto-removal is handled by the notification component itself
+  };
+
+  const removeNotification = (id) => {
+    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   };
 
   const handleImageUpload = async (type, event) => {
@@ -85,13 +93,13 @@ const UserProfile = () => {
           ...prev,
           [type === "profile" ? "profile_picture" : "cover_photo"]: data.url,
         }));
-        showToast("success", "Image uploaded successfully");
+        showNotification("success", "Image uploaded successfully");
       } else {
-        showToast("error", "Failed to upload image");
+        showNotification("error", "Failed to upload image");
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      showToast("error", "Error uploading image");
+      showNotification("error", "Error uploading image");
     }
   };
 
@@ -126,17 +134,15 @@ const UserProfile = () => {
       if (data.success) {
         setUserData((prev) => ({ ...prev, [field]: tempData[field] }));
         setEditMode((prev) => ({ ...prev, [field]: false }));
-        showToast("success", "Updated successfully");
+        showNotification("success", "Updated successfully");
       } else {
-        showToast("error", "Failed to update");
+        showNotification("error", "Failed to update");
       }
     } catch (error) {
       console.error(`Error updating ${field}:`, error);
-      showToast("error", "Error updating field");
+      showNotification("error", "Error updating field");
     }
   };
-
-  const fileInputRef = React.useRef(null);
 
   const triggerFileInput = (type) => {
     fileInputRef.current.setAttribute("data-type", type);
@@ -149,23 +155,19 @@ const UserProfile = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#13505b] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#119da4] border-t-transparent"></div>
-      </div>
-    );
+    return <Loader />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#13505b] flex items-center justify-center">
-        <div className="text-white text-xl">{error}</div>
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div className="text-blue-700 text-xl">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#13505b]">
+    <div className="min-h-screen bg-blue-50">
       <input
         type="file"
         ref={fileInputRef}
@@ -175,165 +177,44 @@ const UserProfile = () => {
       />
 
       {/* Header Section */}
-      <div className="relative h-96">
-        {/* Cover Photo */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0c7489] to-[#119da4] overflow-hidden group">
-          {userData.cover_photo ? (
-            <img
-              src={userData.cover_photo}
-              alt="Cover"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <button
-              onClick={() => triggerFileInput("cover")}
-              className="absolute inset-0 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-            >
-              <Upload className="w-12 h-12" />
-              <span className="ml-2 text-lg">Upload Cover Photo</span>
-            </button>
-          )}
-          <button
-            onClick={() => triggerFileInput("cover")}
-            className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"
-          >
-            <Camera className="w-16 h-16 text-white" />
-          </button>
-          <div className="absolute top-4 right-4">
-            <button
-              onClick={() => setShowCreatePost(true)}
-              className="px-4 py-2 bg-[#119da4] text-white rounded-lg hover:bg-[#0c7489] transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Create Post
-            </button>
-          </div>
-        </div>
+      <ProfileHeader 
+        userData={userData} 
+        triggerFileInput={triggerFileInput}
+      >
+        <button
+          onClick={() => setShowCreatePost(true)}
+          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-md text-sm sm:text-base"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="hidden xs:inline">Create Post</span>
+        </button>
+      </ProfileHeader>
 
-        {/* Profile Section */}
-        <div className="absolute -bottom-32 left-20 flex items-end space-x-6">
-          <div className="relative group">
-            <div className="w-72 h-72 rounded-full bg-[#119da4] border-4 border-[#ffffff] overflow-hidden">
-              {userData.profile_picture ? (
-                <img
-                  src={userData.profile_picture}
-                  alt={userData.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Building2 className="w-16 h-16 text-white" />
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => triggerFileInput("profile")}
-              className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
-            >
-              <Camera className="w-16 h-16 text-white" />
-            </button>
-          </div>
-
-          <div className="mb-6">
-            <div className="flex items-center space-x-4">
-              {editMode.name ? (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={tempData.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                    className="bg-white/90 text-[#13505b] text-2xl font-bold px-3 py-1 rounded"
-                  />
-                  <button
-                    onClick={() => handleSave("name")}
-                    className="text-green-400 hover:text-green-500"
-                  >
-                    <Check className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={() => handleCancel("name")}
-                    className="text-red-400 hover:text-red-500"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h1 className="text-3xl font-bold text-white">
-                    {userData.name}
-                  </h1>
-                  <button
-                    onClick={() => handleEdit("name")}
-                    className="text-white/70 hover:text-white"
-                  >
-                    <Pencil className="w-5 h-5" />
-                  </button>
-                </>
-              )}
-            </div>
-
-            {editMode.bio ? (
-              <div className="flex items-center space-x-2 mt-2">
-                <input
-                  type="text"
-                  value={tempData.bio || ""}
-                  onChange={(e) => handleChange("bio", e.target.value)}
-                  placeholder="Add a bio"
-                  className="bg-white/90 text-[#13505b] px-3 py-1 rounded w-full"
-                />
-                <button
-                  onClick={() => handleSave("bio")}
-                  className="text-green-400 hover:text-green-500"
-                >
-                  <Check className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={() => handleCancel("bio")}
-                  className="text-red-400 hover:text-red-500"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x- mt-10">
-                <p className="text-white/90">
-                  {userData.bio }
-                </p>
-                <div>
-                <p className="text-white/90 -mt-10">
-                 {"Add a bioooooo to tell people about your user"}
-                </p>
-                </div>
-                <button
-                  onClick={() => handleEdit("bio")}
-                  className="text-white/70 hover:text-white"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Profile Info Section */}
+      <ProfileInfo 
+        userData={userData}
+        editMode={editMode}
+        tempData={tempData}
+        handleEdit={handleEdit}
+        handleCancel={handleCancel}
+        handleChange={handleChange}
+        handleSave={handleSave}
+        triggerFileInput={triggerFileInput}
+      />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          {/* Content will go here */}
+        </div>
       </div>
+          <UserPosts userId={user_id} />
 
-      {/* Toast Notifications */}
-      <div className="fixed bottom-4 right-4 space-y-2 z-50">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`px-4 py-2 rounded-lg shadow-lg text-white ${
-              toast.type === "success" ? "bg-green-500" : "bg-red-500"
-            }`}
-          >
-            {toast.message}
-          </div>
-        ))}
-      </div>
+      {/* Notifications */}
+      <NotificationsContainer 
+        notifications={notifications} 
+        removeNotification={removeNotification} 
+      />
 
       {showCreatePost && (
         <CreatePost userId={user_id} onClose={() => setShowCreatePost(false)} />
