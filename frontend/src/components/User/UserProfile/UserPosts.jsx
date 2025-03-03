@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Heart, MessageCircle, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, MessageCircle, Calendar, Image, Layers } from "lucide-react";
 import PostModal from "./PostModal";
 
 const UserPosts = ({ userId }) => {
@@ -9,6 +9,7 @@ const UserPosts = ({ userId }) => {
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [scrollPositions, setScrollPositions] = useState({ posts: 0, portfolio: 0 });
 
   const postsContainerRef = useRef(null);
   const portfolioContainerRef = useRef(null);
@@ -45,6 +46,39 @@ const UserPosts = ({ userId }) => {
     }
   }, [userId]);
 
+  // Track scroll position for containers
+  useEffect(() => {
+    const handleScroll = (containerType) => {
+      const container = containerType === "posts" ? postsContainerRef.current : portfolioContainerRef.current;
+      if (container) {
+        setScrollPositions(prev => ({
+          ...prev,
+          [containerType]: container.scrollLeft
+        }));
+      }
+    };
+
+    const postsContainer = postsContainerRef.current;
+    const portfolioContainer = portfolioContainerRef.current;
+    
+    if (postsContainer) {
+      postsContainer.addEventListener("scroll", () => handleScroll("posts"));
+    }
+    
+    if (portfolioContainer) {
+      portfolioContainer.addEventListener("scroll", () => handleScroll("portfolio"));
+    }
+    
+    return () => {
+      if (postsContainer) {
+        postsContainer.removeEventListener("scroll", () => handleScroll("posts"));
+      }
+      if (portfolioContainer) {
+        portfolioContainer.removeEventListener("scroll", () => handleScroll("portfolio"));
+      }
+    };
+  }, []);
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', { 
@@ -58,7 +92,7 @@ const UserPosts = ({ userId }) => {
     const container = containerType === "posts" ? postsContainerRef.current : portfolioContainerRef.current;
     if (!container) return;
     
-    // Smooth scroll by the width of one card
+    // Smooth scroll by the width of one card with a more natural animation
     const cardWidth = Math.floor(container.offsetWidth / 3);
     const scrollAmount = direction === "next" ? cardWidth : -cardWidth;
     
@@ -86,6 +120,11 @@ const UserPosts = ({ userId }) => {
       return null;
     }
     return imageArray[0]; // Only return the first image
+  };
+
+  // Function to check if post has multiple images
+  const hasMultipleImages = (imageArray) => {
+    return imageArray && imageArray.length > 1;
   };
 
   return (
@@ -133,7 +172,7 @@ const UserPosts = ({ userId }) => {
       ) : (
         <>
           {/* Posts Content */}
-          <div className={`transition-opacity duration-300 ${activeTab === "posts" ? "opacity-100" : "opacity-0 hidden"}`}>
+          <div className={`transition-opacity duration-500 ${activeTab === "posts" ? "opacity-100" : "opacity-0 hidden"}`}>
             <div className="relative">
               {posts.length === 0 ? (
                 <div className="flex items-center justify-center h-64">
@@ -146,25 +185,47 @@ const UserPosts = ({ userId }) => {
                   style={{ 
                     scrollbarWidth: 'none', 
                     msOverflowStyle: 'none',
-                    WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
+                    WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+                    transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' // Custom spring animation
                   }}
                 >
                   {posts.map((post) => (
                     <div 
                       key={post.post_id}
-                      className="flex-none w-full sm:w-1/2 md:w-1/3 snap-start transition-transform duration-300 hover:translate-y-1"
+                      className="flex-none w-full sm:w-1/2 md:w-1/3 snap-start transition-transform duration-300 hover:-translate-y-2"
+                      style={{transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'}} // Custom spring animation
                     >
                       <div 
-                        className="relative group cursor-pointer overflow-hidden rounded-lg shadow-md bg-white transition-all duration-300 hover:shadow-lg"
+                        className="relative group cursor-pointer overflow-hidden rounded-lg shadow-md bg-white transition-all duration-300 hover:shadow-xl"
                         onClick={() => setSelectedPost(post)}
                       >
-                        <div className="aspect-square overflow-hidden bg-gray-100">
+                        <div className="aspect-square overflow-hidden bg-gray-100 relative">
                           {getThumbnailImage(post.images) ? (
-                            <img 
-                              src={getThumbnailImage(post.images)}
-                              alt={`Post ${post.post_id}`} 
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
+                            <>
+                              <img 
+                                src={getThumbnailImage(post.images)}
+                                alt={`Post ${post.post_id}`} 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                style={{transition: 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)'}} // Custom spring animation
+                              />
+                              
+                              {/* Multiple Images Indicator */}
+                              {hasMultipleImages(post.images) && (
+                                <div className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full transform transition-transform group-hover:scale-110">
+                                  <Layers className="w-4 h-4" />
+                                </div>
+                              )}
+                              
+                              {/* Image Count Indicator */}
+                              {hasMultipleImages(post.images) && (
+                                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                                  <div className="flex items-center space-x-1">
+                                    <Image className="w-3 h-3" />
+                                    <span>{post.images.length}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </>
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gray-200">
                               <span className="text-gray-400">No image</span>
@@ -175,12 +236,12 @@ const UserPosts = ({ userId }) => {
                           <p className="text-sm text-gray-600 mb-3 line-clamp-2">{post.content}</p>
                           <div className="flex justify-between items-center">
                             <div className="flex items-center space-x-4">
-                              <div className="flex items-center text-gray-500">
-                                <Heart className="w-4 h-4 mr-1" />
+                              <div className="flex items-center text-gray-500 group-hover:text-red-500 transition-colors duration-300">
+                                <Heart className="w-4 h-4 mr-1 transition-transform group-hover:scale-110 duration-300" />
                                 <span className="text-xs">{post.likes_count}</span>
                               </div>
-                              <div className="flex items-center text-gray-500">
-                                <MessageCircle className="w-4 h-4 mr-1" />
+                              <div className="flex items-center text-gray-500 group-hover:text-blue-500 transition-colors duration-300">
+                                <MessageCircle className="w-4 h-4 mr-1 transition-transform group-hover:scale-110 duration-300" />
                                 <span className="text-xs">{post.comments_count}</span>
                               </div>
                             </div>
@@ -191,7 +252,7 @@ const UserPosts = ({ userId }) => {
                           </div>
                         </div>
                         {post.category_name && (
-                          <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-0.5 rounded-full text-xs transform transition-transform duration-300 group-hover:scale-110">
+                          <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-0.5 rounded-full text-xs transform transition-transform duration-300 group-hover:scale-110 shadow-md group-hover:shadow-lg">
                             {post.category_name}
                           </div>
                         )}
@@ -201,10 +262,8 @@ const UserPosts = ({ userId }) => {
                 </div>
               )}
               
-             
             </div>
           </div>
-
           {/* Portfolio Content */}
           <div className={`transition-opacity duration-300 ${activeTab === "portfolio" ? "opacity-100" : "opacity-0 hidden"}`}>
             <div className="relative">
