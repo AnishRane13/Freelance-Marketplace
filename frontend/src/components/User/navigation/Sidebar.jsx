@@ -1,13 +1,15 @@
-// Sidebar.js
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { navLinks } from './NavigationLinks';
 import CreatePost from '../../CreatePost';
+import CategoriesModal from '../../CategoriesModal';
 
-const Sidebar = ({ userId }) => {
+const Sidebar = () => {
   const location = useLocation();
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
-  
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const userId = localStorage.getItem("user_id");
+
   return (
     <>
       <div className="hidden md:flex flex-col w-64 bg-white border-r h-screen fixed left-0 top-16">
@@ -16,8 +18,12 @@ const Sidebar = ({ userId }) => {
             link.isModal ? (
               <button
                 key={link.path}
-                onClick={() => setShowCreatePostModal(true)}
-                className={`flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-[#119DA4] transition-colors duration-200 w-full text-left`}
+                onClick={() => 
+                  link.label === "Create Post" 
+                    ? setShowCreatePostModal(true) 
+                    : setShowCategoriesModal(true)
+                }
+                className={`flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-blue-500 transition-colors duration-200 w-full text-left`}
               >
                 <link.icon className="w-5 h-5" />
                 <span className="font-medium">{link.label}</span>
@@ -26,8 +32,8 @@ const Sidebar = ({ userId }) => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-[#119DA4] transition-colors duration-200 ${
-                  location.pathname === link.path ? 'bg-gray-100 text-[#119DA4]' : ''
+                className={`flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-blue-500 transition-colors duration-200 ${
+                  location.pathname === link.path ? 'bg-gray-100 text-blue-500' : ''
                 }`}
               >
                 <link.icon className="w-5 h-5" />
@@ -40,6 +46,14 @@ const Sidebar = ({ userId }) => {
       
       {showCreatePostModal && (
         <CreatePost userId={userId} onClose={() => setShowCreatePostModal(false)} />
+      )}
+
+      {showCategoriesModal && (
+        <CategoriesModal 
+          isOpen={showCategoriesModal} 
+          onClose={() => setShowCategoriesModal(false)} 
+          userId={userId} 
+        />
       )}
     </>
   );

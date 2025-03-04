@@ -1,12 +1,14 @@
-// MobileBottomNav.js
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { navLinks } from './NavigationLinks';
 import CreatePost from '../../CreatePost';
+import CategoriesModal from '../../CategoriesModal';
 
-const MobileBottomNav = ({ userId }) => {
+const MobileBottomNav = () => {
   const location = useLocation();
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const userId = localStorage.getItem("user_id");
   
   return (
     <>
@@ -16,8 +18,12 @@ const MobileBottomNav = ({ userId }) => {
             link.isModal ? (
               <button
                 key={link.path}
-                onClick={() => setShowCreatePostModal(true)}
-                className={`flex flex-col items-center p-2 text-gray-600 hover:text-[#119DA4] transition-colors duration-200`}
+                onClick={() => 
+                  link.label === "Create Post" 
+                    ? setShowCreatePostModal(true) 
+                    : setShowCategoriesModal(true)
+                }
+                className={`flex flex-col items-center p-2 text-gray-600 hover:text-blue-500 transition-colors duration-200`}
               >
                 <link.icon className="w-6 h-6" />
                 <span className="text-xs mt-1">{link.label}</span>
@@ -26,8 +32,8 @@ const MobileBottomNav = ({ userId }) => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex flex-col items-center p-2 text-gray-600 hover:text-[#119DA4] transition-colors duration-200 ${
-                  location.pathname === link.path ? 'text-[#119DA4]' : ''
+                className={`flex flex-col items-center p-2 text-gray-600 hover:text-blue-500 transition-colors duration-200 ${
+                  location.pathname === link.path ? 'text-blue-500' : ''
                 }`}
               >
                 <link.icon className="w-6 h-6" />
@@ -40,6 +46,14 @@ const MobileBottomNav = ({ userId }) => {
       
       {showCreatePostModal && (
         <CreatePost userId={userId} onClose={() => setShowCreatePostModal(false)} />
+      )}
+
+      {showCategoriesModal && (
+        <CategoriesModal 
+          isOpen={showCategoriesModal} 
+          onClose={() => setShowCategoriesModal(false)} 
+          userId={userId} 
+        />
       )}
     </>
   );

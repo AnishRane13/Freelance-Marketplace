@@ -1,14 +1,25 @@
-import { Building2, Camera, Check, Pencil, X, Briefcase, MapPin, Link, Mail, Phone } from "lucide-react";
+import {
+  Building2,
+  Camera,
+  Check,
+  Pencil,
+  X,
+  Briefcase,
+  MapPin,
+  Link,
+  Mail,
+  Phone,
+} from "lucide-react";
 
-const ProfileInfo = ({ 
-  userData, 
-  editMode, 
-  tempData, 
-  handleEdit, 
-  handleCancel, 
-  handleChange, 
-  handleSave, 
-  triggerFileInput 
+const ProfileInfo = ({
+  userData,
+  editMode,
+  tempData,
+  handleEdit,
+  handleCancel,
+  handleChange,
+  handleSave,
+  triggerFileInput,
 }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative -mt-24 sm:-mt-32 md:-mt-36 z-10">
@@ -37,12 +48,8 @@ const ProfileInfo = ({
               >
                 <Camera className="w-10 h-10 text-white" />
               </button>
-              
-              <div className="absolute bottom-1 right-1 bg-blue-500 rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-4 h-4 text-white" />
-              </div>
             </div>
-            
+
             {/* Stats Card (Mobile-Only) */}
             <div className="mt-5 bg-blue-50 rounded-lg p-4 w-full sm:hidden">
               <div className="flex justify-center text-center">
@@ -102,7 +109,7 @@ const ProfileInfo = ({
                   )}
                 </div>
               </div>
-              
+
               {/* Stats (Desktop) */}
               <div className="hidden sm:flex items-center">
                 <div className="ml-4 pl-4 border-l border-blue-100">
@@ -145,7 +152,8 @@ const ProfileInfo = ({
               ) : (
                 <div className="flex items-start">
                   <p className="text-blue-600 text-base sm:text-lg flex-1">
-                    {userData.bio || "Add a bio to tell people about your business"}
+                    {userData.bio ||
+                      "Add a bio to tell people about your business"}
                   </p>
                   <button
                     onClick={() => handleEdit("bio")}
@@ -157,7 +165,7 @@ const ProfileInfo = ({
                 </div>
               )}
             </div>
-            
+
             {/* Contact Info */}
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-center text-blue-600">
@@ -193,7 +201,6 @@ const ProfileInfo = ({
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
               </div>
-            
             </div>
           </div>
         </div>
