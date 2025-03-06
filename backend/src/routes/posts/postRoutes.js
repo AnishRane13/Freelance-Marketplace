@@ -3,7 +3,7 @@ const multer = require("multer");
 const router = express.Router();
 const { createPostWithImagesController } = require("../../controllers/posts/createPost");
 const { authenticateToken } = require('../../middleware/auth');
-const { getPostsController, getFilteredPostsController } = require('../../controllers/posts/getPosts');
+const { getPostsController, getFilteredPostsController, getAllPostsByUser } = require('../../controllers/posts/getPosts');
 
 // Configure Multer for in-memory storage
 const storage = multer.memoryStorage();
@@ -24,6 +24,8 @@ router.post("/", upload.array("images"), createPostWithImagesController);
 // Updated API calls
 router.get("/", authenticateToken, getPostsController);
 router.get("/filtered", authenticateToken, getFilteredPostsController);
+
+router.get("/:userId/all",getAllPostsByUser)
 
 
 module.exports = router;
