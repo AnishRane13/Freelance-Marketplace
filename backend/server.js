@@ -54,6 +54,7 @@ app.use("/logout", logoutRoutes);
 app.use("/categories", categoriesRoutes);
 app.use("/users", userRoutes);
 app.use("/posts", postRoutes);
+// app.use("/subscription",)
 
 // Start Server
 httpServer.listen(PORT, () => {

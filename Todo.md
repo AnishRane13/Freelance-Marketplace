@@ -43,3 +43,10 @@ Now in this after the job's date is passed and the company can mark job as compl
 
 https://chatgpt.com/c/67c9c3fa-cf74-800e-a8ca-2580174d7080
 read this for complete job and payment and subscription related things
+
+
+
+subscriptions
+
+1. To get if the company has subscription or not
+2. To 

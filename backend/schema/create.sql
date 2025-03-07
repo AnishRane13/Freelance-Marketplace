@@ -137,6 +137,20 @@ CREATE TABLE payments (
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- PAYMENT TRACKING TABLE (For PayPal payment processing)
+CREATE TABLE payment_tracking (
+    tracking_id VARCHAR(36) PRIMARY KEY, -- UUID for tracking
+    paypal_payment_id VARCHAR(255) NOT NULL,
+    company_id INT REFERENCES companies(company_id) ON DELETE CASCADE,
+    subscription_id INT REFERENCES subscriptions(subscription_id) ON DELETE SET NULL,
+    plan_type VARCHAR(50) NOT NULL,
+    amount INT NOT NULL,
+    job_limit INT NOT NULL,
+    status VARCHAR(20) CHECK (status IN ('pending', 'completed', 'failed')) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP
+);
+
 -- JOB COMPLETION TABLE (Tracks job completion & earnings distribution)
 CREATE TABLE job_completion (
     completion_id SERIAL PRIMARY KEY,
