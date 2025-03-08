@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Image as ImageIcon, Loader2, Smile, Paperclip } from 'lucide-react';
-import { NotificationsContainer } from '../components/Notification'; // Assuming the notifications file is in the same directory
+import { NotificationsContainer } from '../components/Notification'; 
 
 const MAX_CONTENT_LENGTH = 300; // Maximum character limit for post content
 const MAX_IMAGES = 5; // Maximum number of images allowed
