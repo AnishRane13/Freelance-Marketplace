@@ -15,7 +15,7 @@ const logoutRoutes = require("./src/routes/LogoutRoutes");
 const categoriesRoutes = require("./src/routes/categories/categories");
 const userRoutes = require("./src/routes/users/userRoutes");
 const postRoutes = require("./src/routes/posts/postRoutes");
-
+const subscriptionRoutes = require("./src/routes/subscriptions/subscriptionRoutes");
 // Initialize Express App
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,7 +54,7 @@ app.use("/logout", logoutRoutes);
 app.use("/categories", categoriesRoutes);
 app.use("/users", userRoutes);
 app.use("/posts", postRoutes);
-// app.use("/subscription",)
+app.use("/subscription", subscriptionRoutes)
 
 // Start Server
 httpServer.listen(PORT, () => {

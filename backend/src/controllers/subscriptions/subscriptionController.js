@@ -33,7 +33,8 @@ exports.getSubscriptionPlans = (req, res) => {
 // Get company's active subscription
 exports.getActiveSubscription = async (req, res) => {
   try {
-    const companyId = req.user.company_id;
+    // const companyId = req.user.company_id;
+    const companyId = req.query.company_id;
 
     const query = `
       SELECT subscription_id, amount, job_limit, jobs_posted, 

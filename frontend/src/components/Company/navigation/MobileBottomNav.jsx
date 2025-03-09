@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { navLinks } from './NavigationLinks';
-import CreatePost from '../../CreatePost';
+import CreateJob from '../CreateJob';
 import CategoriesModal from '../../CategoriesModal';
 
 const MobileBottomNav = () => {
@@ -46,7 +46,7 @@ const MobileBottomNav = () => {
       </div>
       
       {showCreateJobModal && (
-        <CreatePost userId={userId} onClose={() => setShowCreateJobModal(false)} />
+        <CreateJob onClose={() => setShowCreateJobModal(false)} />
       )}
 
       {showCategoriesModal && (

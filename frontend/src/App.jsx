@@ -11,6 +11,7 @@ import CompanyProfile from "./pages/Company/CompanyProfile/CompanyProfile.jsx";
 import UserProfile from "./pages/User/UserProfile/UserProfile.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { AuthProvider } from "./context/AuthContext";
+import CompanyCreateJob from "./pages/Company/CompanyCreateJob/CompanyCreateJob.jsx";
 
 const DashboardRedirect = () => {
   const token = localStorage.getItem("token");
@@ -55,6 +56,7 @@ function App() {
           <Route element={<ProtectedRoute element={<CompanyLayout />} allowedType="company" />}>
             <Route path="/company/dashboard" element={<CompanyDashboard />} />
             <Route path="/company/profile/:user_id" element={<CompanyProfile />} />
+            <Route path="/company/createjob" element={<CompanyCreateJob />} />
             {/* <Route path="/company/manage" element={<CompanyManage />} /> */}
             {/* <Route path="/company/settings" element={<CompanySettings />} /> */}
           </Route>
