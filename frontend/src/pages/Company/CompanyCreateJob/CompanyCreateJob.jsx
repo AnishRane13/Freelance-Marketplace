@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Loader2, MapPin, Calendar, DollarSign, AlertCircle } from 'lucide-react';
+import { Briefcase, Loader2, MapPin, Calendar, DollarSign, AlertCircle, Clock, ChevronDown, Send, CheckCircle, Tag, CreditCard, FileText } from 'lucide-react';
 import { NotificationsContainer } from '../../../components/Notification'; 
 import SubscriptionModal from '../../../components/Company/SubscriptionModal'; // We'll create this component next
 
@@ -205,229 +205,293 @@ const CompanyCreateJob = () => {
 
   return (
     <>
-      <div className="bg-white min-h-screen">
-        <div className="container mx-auto py-8 px-4">
+ <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-white min-h-screen font-sans">
+        <div className="container mx-auto py-16 px-4">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-blue-600 flex items-center gap-2 mb-4">
-              <Briefcase className="w-6 h-6" />
-              Post a New Job
-            </h1>
-            <div className="w-full h-1 bg-blue-100 rounded"></div>
-          </div>
-
-          {/* Subscription Info */}
-          {hasActiveSubscription && subscriptionData && (
-            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-3xl mx-auto">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-blue-800">Active Subscription</h3>
-                  <p className="text-sm text-blue-600">
-                    You have {subscriptionData.remaining_jobs} job posts remaining
-                  </p>
-                  <p className="text-xs text-blue-500">
-                    Expires: {new Date(subscriptionData.expires_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setShowSubscriptionModal(true)}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                >
-                  Upgrade
-                </button>
+          <div className="mb-12 text-center max-w-2xl mx-auto">
+            <div className="inline-flex items-center justify-center p-1.5 bg-blue-100 rounded-full mb-6">
+              <div className="bg-blue-600 text-white p-2 rounded-full">
+                <Briefcase className="w-5 h-5" />
               </div>
             </div>
-          )}
-
-          {/* Loading State */}
-          {isCheckingSubscription && (
-            <div className="max-w-3xl mx-auto mb-6 flex justify-center p-8">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            </div>
-          )}
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-700 bg-clip-text text-transparent mb-3">
+              Post a New Job
+            </h1>
+            <p className="text-blue-600 text-lg">Create an engaging job posting to find the perfect talent</p>
+          </div>
 
           {/* Main Content */}
           {!isCheckingSubscription && (
-            <div className="bg-white rounded-xl border border-blue-200 shadow-md max-w-3xl mx-auto">
-              <div className="p-6">
-                {!hasActiveSubscription && (
-                  <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-medium">Subscription Required</h3>
-                      <p className="text-sm">You need an active subscription to post jobs. Please purchase a subscription plan.</p>
+            <div className="max-w-3xl mx-auto">
+              
+              {/* Subscription Banner */}
+              {hasActiveSubscription && subscriptionData && (
+                <div className="mb-8 bg-white border-l-4 border-green-500 rounded-xl p-5 shadow-lg relative overflow-hidden">
+                  <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-green-50 to-transparent opacity-70"></div>
+                  <div className="flex items-start gap-4">
+                    <div className="bg-green-100 text-green-600 p-2 rounded-full">
+                      <CheckCircle className="w-6 h-6" />
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="font-bold text-green-800 text-lg">Active Subscription</h3>
+                      <div className="mt-1 flex items-center gap-5">
+                        <div className="flex items-center gap-2">
+                          <Tag className="w-4 h-4 text-green-600" />
+                          <p className="text-green-700">
+                            <span className="font-semibold">{subscriptionData.remaining_jobs}</span> job posts remaining
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-green-600" />
+                          <p className="text-green-700">
+                            Expires: {new Date(subscriptionData.expires_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* No Subscription Warning */}
+              {!hasActiveSubscription && (
+                <div className="mb-8 bg-white border-l-4 border-amber-500 rounded-xl p-6 shadow-lg relative overflow-hidden">
+                  <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-amber-50 to-transparent opacity-70"></div>
+                  <div className="flex items-start gap-4">
+                    <div className="bg-amber-100 text-amber-600 p-2 rounded-full">
+                      <AlertCircle className="w-6 h-6" />
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="font-bold text-amber-800 text-lg">Subscription Required</h3>
+                      <p className="text-amber-700 mt-1">You need an active subscription to post jobs.</p>
                       <button 
                         onClick={() => setShowSubscriptionModal(true)}
-                        className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        className="mt-3 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm rounded-lg hover:from-blue-700 hover:to-indigo-700 shadow-md flex items-center gap-2 font-medium transition-all duration-300 hover:translate-y-[-2px]"
                       >
+                        <CreditCard className="w-4 h-4" />
                         View Subscription Plans
                       </button>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Job Title */}
-                  <div>
-                    <label htmlFor="job-title" className="block text-sm font-medium text-blue-800 mb-1">
-                      Job Title
-                    </label>
-                    <input
-                      id="job-title"
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. Website Development, Logo Design"
-                      className="w-full p-3 bg-white rounded-lg border-2 border-blue-300 text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                      maxLength={255}
-                    />
+              {/* Loading State */}
+              {isCheckingSubscription && (
+                <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+                  <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+                  <p className="text-blue-600 font-medium">Checking your subscription status...</p>
+                </div>
+              )}
+
+              {/* Job Form Card */}
+              {!isCheckingSubscription && (
+                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                  <div className="px-8 pt-8 pb-6 border-b border-gray-100">
+                    <h2 className="text-xl font-bold text-gray-800">Job Details</h2>
+                    <p className="text-gray-500 mt-1">All fields are required</p>
                   </div>
-
-                  {/* Job Description */}
-                  <div>
-                    <label htmlFor="job-description" className="block text-sm font-medium text-blue-800 mb-1">
-                      Job Description
-                    </label>
-                    <textarea
-                      id="job-description"
-                      value={description}
-                      onChange={(e) => {
-                        if (e.target.value.length <= MAX_DESCRIPTION_LENGTH) {
-                          setDescription(e.target.value);
-                        }
-                      }}
-                      placeholder="Describe job requirements, deliverables, and other important details"
-                      className="w-full min-h-32 p-4 bg-white rounded-lg border-2 border-blue-300 text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-y"
-                      required
-                    />
-                    <div className="text-sm text-gray-500 text-right mt-1">
-                      {description.length} / {MAX_DESCRIPTION_LENGTH}
-                    </div>
-                  </div>
-
-                  {/* Category Selection */}
-                  <div>
-                    <label htmlFor="job-category" className="block text-sm font-medium text-blue-800 mb-1">
-                      Category
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="job-category"
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="w-full p-3 pl-4 pr-10 bg-white rounded-lg border-2 border-blue-300 text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-all duration-200"
-                        required
-                      >
-                        <option value="">Select Category</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-blue-500">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Two Column Layout for Price and Location */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Price */}
-                    <div>
-                      <label htmlFor="job-price" className="block text-sm font-medium text-blue-800 mb-1">
-                        Budget ($)
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                          <DollarSign className="w-5 h-5 text-blue-500" />
+                  
+                  <form onSubmit={handleSubmit} className="p-8">
+                    <div className="space-y-8">
+                      {/* Job Title */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label htmlFor="job-title" className="block text-sm font-semibold text-gray-700">
+                            Job Title
+                          </label>
+                          <span className="text-xs text-blue-500">Make it descriptive</span>
                         </div>
-                        <input
-                          id="job-price"
-                          type="number"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          placeholder="Enter amount"
-                          min={MIN_PRICE}
-                          className="w-full p-3 pl-10 bg-white rounded-lg border-2 border-blue-300 text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Location */}
-                    <div>
-                      <label htmlFor="job-location" className="block text-sm font-medium text-blue-800 mb-1">
-                        Location
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                          <MapPin className="w-5 h-5 text-blue-500" />
+                        <div className="relative group">
+                          <input
+                            id="job-title"
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="e.g. Website Development, Logo Design"
+                            className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 placeholder-gray-400 group-hover:border-blue-300"
+                            required
+                            maxLength={255}
+                          />
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            {/* <FileText className="w-5 h-5 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
+                          </div>
                         </div>
-                        <input
-                          id="job-location"
-                          type="text"
-                          value={location}
-                          onChange={(e) => setLocation(e.target.value)}
-                          placeholder="e.g. Remote, New York, London"
-                          className="w-full p-3 pl-10 bg-white rounded-lg border-2 border-blue-300 text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                          required
-                          maxLength={150}
-                        />
+                      </div>
+
+                      {/* Job Description */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label htmlFor="job-description" className="block text-sm font-semibold text-gray-700">
+                            Job Description
+                          </label>
+                          <span className="text-xs text-blue-500">Be specific about requirements</span>
+                        </div>
+                        <div className="relative">
+                          <textarea
+                            id="job-description"
+                            value={description}
+                            onChange={(e) => {
+                              if (e.target.value.length <= MAX_DESCRIPTION_LENGTH) {
+                                setDescription(e.target.value);
+                              }
+                            }}
+                            placeholder="Describe job requirements, deliverables, and other important details"
+                            className="w-full min-h-40 p-4 bg-gray-50 rounded-xl border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-y placeholder-gray-400"
+                            required
+                          />
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="text-xs text-gray-500">Use markdown for formatting</div>
+                          <div className="text-xs">
+                            <span className={description.length > MAX_DESCRIPTION_LENGTH * 0.8 ? "text-amber-500 font-medium" : "text-gray-500"}>
+                              {description.length}
+                            </span>
+                            <span className="text-gray-400"> / {MAX_DESCRIPTION_LENGTH}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Two Column Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Category Selection */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label htmlFor="job-category" className="block text-sm font-semibold text-gray-700">
+                              Category
+                            </label>
+                          </div>
+                          <div className="relative">
+                            <select
+                              id="job-category"
+                              value={selectedCategory}
+                              onChange={(e) => setSelectedCategory(e.target.value)}
+                              className="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-all duration-300"
+                              required
+                            >
+                              <option value="">Select Category</option>
+                              {categories.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400">
+                              <ChevronDown className="w-5 h-5" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Location */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label htmlFor="job-location" className="block text-sm font-semibold text-gray-700">
+                              Location
+                            </label>
+                          </div>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <MapPin className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <input
+                              id="job-location"
+                              type="text"
+                              value={location}
+                              onChange={(e) => setLocation(e.target.value)}
+                              placeholder="e.g. Remote, New York, London"
+                              className="w-full p-4 pl-12 bg-gray-50 rounded-xl border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 placeholder-gray-400"
+                              required
+                              maxLength={150}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Price */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label htmlFor="job-price" className="block text-sm font-semibold text-gray-700">
+                              Budget ($)
+                            </label>
+                            <span className="text-xs text-blue-500">Min: ${MIN_PRICE}</span>
+                          </div>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <DollarSign className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <input
+                              id="job-price"
+                              type="number"
+                              value={price}
+                              onChange={(e) => setPrice(e.target.value)}
+                              placeholder="Enter amount"
+                              min={MIN_PRICE}
+                              className="w-full p-4 pl-12 bg-gray-50 rounded-xl border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 placeholder-gray-400"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* Deadline */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label htmlFor="job-deadline" className="block text-sm font-semibold text-gray-700">
+                              Deadline
+                            </label>
+                          </div>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                              <Calendar className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <input
+                              id="job-deadline"
+                              type="date"
+                              value={deadline}
+                              onChange={(e) => setDeadline(e.target.value)}
+                              className="w-full p-4 pl-12 bg-gray-50 rounded-xl border border-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                              required
+                              min={new Date().toISOString().split('T')[0]}
+                            />
+                          </div>
+                          {daysUntilDeadline && (
+                            <div className="text-xs text-blue-500 flex items-center mt-1">
+                              <Clock className="w-3.5 h-3.5 mr-1" />
+                              {daysUntilDeadline === 1
+                                ? 'Due tomorrow'
+                                : `Due in ${daysUntilDeadline} days`}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Submit Button */}
+                      <div className="pt-6 border-t border-gray-100">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                          <p className="text-sm text-gray-500">
+                            By posting, you agree to our <a href="#" className="text-blue-600 hover:underline">Terms of Service</a>
+                          </p>
+                          <button
+                            type="submit"
+                            disabled={isLoading || !hasActiveSubscription}
+                            className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-md disabled:opacity-70 flex items-center justify-center gap-2 font-medium transition-all duration-300 hover:shadow-lg hover:translate-y-[-2px]"
+                          >
+                            {isLoading ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Posting Job...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-5 h-5" />
+                                Publish Job
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Deadline */}
-                  <div>
-                    <label htmlFor="job-deadline" className="block text-sm font-medium text-blue-800 mb-1">
-                      Deadline
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <Calendar className="w-5 h-5 text-blue-500" />
-                      </div>
-                      <input
-                        id="job-deadline"
-                        type="date"
-                        value={deadline}
-                        onChange={(e) => setDeadline(e.target.value)}
-                        className="w-full p-3 pl-10 bg-white rounded-lg border-2 border-blue-300 text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        required
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                    </div>
-                    {daysUntilDeadline && (
-                      <div className="mt-1 text-sm text-blue-500">
-                        {daysUntilDeadline === 1
-                          ? 'Due tomorrow'
-                          : `Due in ${daysUntilDeadline} days`}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={isLoading || !hasActiveSubscription}
-                      className="w-full md:w-auto float-right px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md disabled:opacity-70 flex items-center justify-center gap-2 font-medium"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Posting Job...
-                        </>
-                      ) : (
-                        'Post Job'
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
+                  </form>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -447,7 +511,7 @@ const CompanyCreateJob = () => {
         notifications={notifications} 
         removeNotification={removeNotification} 
       />
-    </>
+      </>
   );
 };
 

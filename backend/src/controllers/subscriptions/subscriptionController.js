@@ -1,5 +1,4 @@
 // src/controllers/subscriptionController.js
-const paypal = require('../../../conf/paypalConfig');
 const db = require('../../../db/db');
 const crypto = require('crypto');
 
@@ -33,10 +32,21 @@ exports.getSubscriptionPlans = (req, res) => {
 // Get company's active subscription
 exports.getActiveSubscription = async (req, res) => {
   try {
-    // const companyId = req.user.company_id;
-    const companyId = req.query.company_id;
+    // Get user_id from request, which is actually company_id
+    const userId = req.query.company_id; 
 
-    const query = `
+    // First, fetch the company_id for the given user_id
+    const companyQuery = `SELECT company_id FROM companies WHERE user_id = $1`;
+    const companyResult = await db.query(companyQuery, [userId]);
+
+    if (companyResult.rows.length === 0) {
+      return res.json({ error: 'No company found for the given user.' });
+    }
+
+    const companyId = companyResult.rows[0].company_id;
+
+    // Fetch the active subscription for the company
+    const subscriptionQuery = `
       SELECT subscription_id, amount, job_limit, jobs_posted, 
              purchased_at, expires_at,
              job_limit - jobs_posted AS remaining_jobs
@@ -48,15 +58,15 @@ exports.getActiveSubscription = async (req, res) => {
       LIMIT 1
     `;
 
-    const result = await db.query(query, [companyId]);
-    
-    if (result.rows.length === 0) {
+    const subscriptionResult = await db.query(subscriptionQuery, [companyId]);
+
+    if (subscriptionResult.rows.length === 0) {
       return res.json({ hasActiveSubscription: false });
     }
-    
+
     res.json({
       hasActiveSubscription: true,
-      subscription: result.rows[0]
+      subscription: subscriptionResult.rows[0],
     });
   } catch (error) {
     console.error('Error fetching subscription:', error);
@@ -64,14 +74,10 @@ exports.getActiveSubscription = async (req, res) => {
   }
 };
 
-// Create PayPal payment
-exports.createPayPalPayment = async (req, res) => {
+// Create payment intent
+exports.createPaymentIntent = async (req, res) => {
   const { planType, user_id } = req.body;
   const plan = SUBSCRIPTION_PLANS[planType];
-
-  console.log('PayPal Client ID:', process.env.PAYPAL_CLIENT_ID);
-  console.log('PayPal Secret:', process.env.PAYPAL_SECRET);
-  
 
   if (!plan) {
     return res.status(400).json({ error: 'Invalid subscription plan' });
@@ -80,7 +86,6 @@ exports.createPayPalPayment = async (req, res) => {
   if (!user_id) {
     return res.status(400).json({ error: "User ID is required" });
   }
-  
 
   try {
     // Verify company exists
@@ -94,89 +99,58 @@ exports.createPayPalPayment = async (req, res) => {
     const companyId = companyResult.rows[0].company_id;
 
     // Create unique payment ID to track this transaction
-    const paymentTrackingId = crypto.randomUUID();
+    const paymentIntentId = crypto.randomUUID();
     
-    // Create payment payload for PayPal
-    const paymentJson = {
-      // "intent": "sale",
-      "intent": "authorize",
-      "payer": {
-        "payment_method": "paypal"
-      },
-      "redirect_urls": {
-        "return_url": `${process.env.FRONTEND_URL}/payment/success?tracking_id=${paymentTrackingId}`,
-        "cancel_url": `${process.env.FRONTEND_URL}/payment/cancel`
-      },
-      "transactions": [{
-        "item_list": {
-          "items": [{
-            "name": plan.description,
-            "sku": planType,
-            "price": plan.amount.toFixed(2).toString(),
-            "currency": "USD", // Use USD instead of INR
-            "quantity": 1
-          }]
-        },
-        "amount": {
-          "currency": "USD", // Use USD instead of INR
-          "total": plan.amount.toFixed(2).toString()
-        },
-        "description": `Freelance Platform Subscription - ${plan.description}`,
-        "custom": paymentTrackingId
-      }]
-    };    
-
-    console.log('PayPal Payment JSON:', JSON.stringify(paymentJson, null, 2));
-
-    console.log('Return URL:', `${process.env.FRONTEND_URL}/payment/success?tracking_id=${paymentTrackingId}`);
-console.log('Cancel URL:', `${process.env.FRONTEND_URL}/payment/cancel`);
-
-    // Create the payment in PayPal
-    paypal.payment.create(paymentJson, async (error, payment) => {
-      if (error) {
-        console.error('PayPal Payment Error:', JSON.stringify(error.response, null, 2));
-        return res.status(500).json({ error: error.response });
-      }
+    // Store payment intent in database
+    const paymentIntentQuery = `
+      INSERT INTO payment_tracking 
+      (tracking_id, paypal_payment_id, company_id, plan_type, amount, job_limit, status, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      RETURNING tracking_id
+    `;
     
+    await db.query(paymentIntentQuery, [
+      paymentIntentId,
+      'CUSTOM_PAYMENT_' + paymentIntentId.substring(0, 8),  // Custom payment ID format
+      companyId,
+      planType,
+      plan.amount,
+      plan.jobLimit,
+      'pending'
+    ]);
 
-      // Store payment tracking info in database
-      const trackingQuery = `
-        INSERT INTO payment_tracking 
-        (tracking_id, paypal_payment_id, company_id, plan_type, amount, job_limit, status, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
-      `;
-      
-      await db.query(trackingQuery, [
-        paymentTrackingId,
-        payment.id,
-        companyId,
-        planType,
-        plan.amount,
-        plan.jobLimit,
-        'pending'
-      ]);
-
-      // Find approval URL to redirect user
-      const approvalUrl = payment.links.find(link => link.rel === 'approval_url');
-      
-      if (approvalUrl) {
-        res.json({ redirectUrl: approvalUrl.href });
-      } else {
-        res.status(500).json({ error: 'Unable to generate payment URL' });
-      }
+    // Return payment details to frontend
+    res.json({
+      paymentIntentId: paymentIntentId,
+      amount: plan.amount,
+      description: plan.description,
+      redirectUrl: `${process.env.FRONTEND_URL}/payment/checkout?intent_id=${paymentIntentId}`
     });
   } catch (error) {
-    console.error('Payment Creation Error:', error);
-    res.status(500).json({ error: 'Failed to process subscription request' });
+    console.error('Payment Intent Creation Error:', error);
+    res.status(500).json({ error: 'Failed to create payment intent' });
   }
 };
 
-// Execute PayPal payment after user approval
-exports.executePayPalPayment = async (req, res) => {
-  const { paymentId, PayerID, tracking_id } = req.query;
+// Process payment (simulating payment processing)
+exports.processPayment = async (req, res) => {
+  const { 
+    paymentIntentId, 
+    cardNumber, 
+    expiryMonth, 
+    expiryYear, 
+    cvc, 
+    cardholderName 
+  } = req.body;
   
-  if (!paymentId || !PayerID || !tracking_id) {
+  // Basic validation
+  if (!paymentIntentId || !cardNumber || !expiryMonth || !expiryYear || !cvc || !cardholderName) {
     return res.status(400).json({ error: 'Missing payment information' });
+  }
+
+  // Simple card validation (this would be more robust in production)
+  if (cardNumber.length < 13 || cardNumber.length > 19) {
+    return res.status(400).json({ error: 'Invalid card number' });
   }
 
   try {
@@ -186,111 +160,133 @@ exports.executePayPalPayment = async (req, res) => {
       WHERE tracking_id = $1 AND status = 'pending'
     `;
     
-    const trackingResult = await db.query(trackingQuery, [tracking_id]);
+    const trackingResult = await db.query(trackingQuery, [paymentIntentId]);
     
     if (trackingResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Payment tracking record not found' });
+      return res.status(404).json({ error: 'Payment intent not found or already processed' });
     }
     
     const paymentTracking = trackingResult.rows[0];
     const plan = SUBSCRIPTION_PLANS[paymentTracking.plan_type];
     
-    // Execute payment in PayPal
-    paypal.payment.execute(paymentId, { payer_id: PayerID }, async (error, payment) => {
-      if (error) {
-        console.error('PayPal Payment Execution Error:', error);
-        
-        // Update tracking status to failed
-        await db.query(
-          'UPDATE payment_tracking SET status = $1 WHERE tracking_id = $2',
-          ['failed', tracking_id]
-        );
-        
-        return res.status(500).json({ error: 'Payment execution failed' });
-      }
+    // In a real implementation, you would integrate with a payment processor here
+    // For now, we'll simulate a successful payment
 
-      try {
-        // Start a transaction
-        await db.query('BEGIN');
-        
-        // Insert subscription into database
-        const subscriptionQuery = `
-          INSERT INTO subscriptions 
-          (company_id, amount, job_limit, jobs_posted, purchased_at, expires_at) 
-          VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '${plan.duration} days')
-          RETURNING subscription_id
-        `;
+    try {
+      // Start a transaction
+      await db.query('BEGIN');
+      
+      // Insert subscription into database
+      const subscriptionQuery = `
+        INSERT INTO subscriptions 
+        (company_id, amount, job_limit, jobs_posted, purchased_at, expires_at) 
+        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '${plan.duration} days')
+        RETURNING subscription_id
+      `;
 
-        const result = await db.query(subscriptionQuery, [
-          paymentTracking.company_id, 
-          paymentTracking.amount, 
-          paymentTracking.job_limit, 
-          0
-        ]);
-        
-        // Update payment tracking record
-        await db.query(
-          'UPDATE payment_tracking SET status = $1, completed_at = CURRENT_TIMESTAMP, subscription_id = $2 WHERE tracking_id = $3',
-          ['completed', result.rows[0].subscription_id, tracking_id]
-        );
-        
-        // Create notification for company
-        const notificationQuery = `
-          INSERT INTO notifications
-          (recipient_id, type, message, is_read, created_at)
-          VALUES (
-            (SELECT user_id FROM companies WHERE company_id = $1),
-            'system',
-            $2,
-            false,
-            CURRENT_TIMESTAMP
-          )
-        `;
-        
-        await db.query(notificationQuery, [
-          paymentTracking.company_id,
-          `Your ${plan.description} subscription has been activated. You can now post up to ${plan.jobLimit} jobs.`
-        ]);
-        
-        // Commit transaction
-        await db.query('COMMIT');
+      const result = await db.query(subscriptionQuery, [
+        paymentTracking.company_id, 
+        paymentTracking.amount, 
+        paymentTracking.job_limit, 
+        0
+      ]);
+      
+      // Update payment tracking record
+      await db.query(
+        'UPDATE payment_tracking SET status = $1, completed_at = CURRENT_TIMESTAMP, subscription_id = $2 WHERE tracking_id = $3',
+        ['completed', result.rows[0].subscription_id, paymentIntentId]
+      );
+      
+      // Create notification for company
+      const notificationQuery = `
+        INSERT INTO notifications
+        (recipient_id, type, message, is_read, created_at)
+        VALUES (
+          (SELECT user_id FROM companies WHERE company_id = $1),
+          'system',
+          $2,
+          false,
+          CURRENT_TIMESTAMP
+        )
+      `;
+      
+      await db.query(notificationQuery, [
+        paymentTracking.company_id,
+        `Your ${plan.description} subscription has been activated. You can now post up to ${plan.jobLimit} jobs.`
+      ]);
+      
+      // Commit transaction
+      await db.query('COMMIT');
 
-        res.json({ 
-          success: true,
-          message: 'Subscription purchased successfully', 
-          subscription: {
-            subscriptionId: result.rows[0].subscription_id,
-            amount: paymentTracking.amount,
-            jobLimit: paymentTracking.job_limit,
-            planType: paymentTracking.plan_type
-          }
-        });
-      } catch (dbError) {
-        // Rollback transaction on error
-        await db.query('ROLLBACK');
-        console.error('Database Subscription Error:', dbError);
-        res.status(500).json({ error: 'Failed to record subscription' });
-      }
-    });
+      res.json({ 
+        success: true,
+        message: 'Payment processed and subscription activated successfully', 
+        subscription: {
+          subscriptionId: result.rows[0].subscription_id,
+          amount: paymentTracking.amount,
+          jobLimit: paymentTracking.job_limit,
+          planType: paymentTracking.plan_type
+        },
+        redirectUrl: `${process.env.FRONTEND_URL}/payment/success?tracking_id=${paymentIntentId}`
+      });
+    } catch (dbError) {
+      // Rollback transaction on error
+      await db.query('ROLLBACK');
+      console.error('Database Subscription Error:', dbError);
+      res.status(500).json({ 
+        error: 'Failed to record subscription',
+        redirectUrl: `${process.env.FRONTEND_URL}/payment/failure`
+      });
+    }
   } catch (error) {
-    console.error('Payment Execution Error:', error);
-    res.status(500).json({ error: 'Failed to execute payment' });
+    console.error('Payment Processing Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process payment',
+      redirectUrl: `${process.env.FRONTEND_URL}/payment/failure`
+    });
   }
 };
 
-// Handle PayPal webhook notifications
-exports.handlePayPalWebhook = (req, res) => {
-  // Verify webhook signature (in production)
-  // Process IPN messages
+// Verify payment status
+exports.verifyPaymentStatus = async (req, res) => {
+  const { tracking_id } = req.query;
   
-  const eventType = req.body.event_type;
-  const resourceId = req.body?.resource?.id;
-  
-  // Log webhook event
-  console.log('PayPal Webhook:', eventType, resourceId);
-  
-  // Respond to PayPal to acknowledge receipt
-  res.status(200).end();
+  if (!tracking_id) {
+    return res.status(400).json({ error: 'Missing tracking ID' });
+  }
+
+  try {
+    const query = `
+      SELECT pt.*, s.job_limit, s.jobs_posted, s.expires_at
+      FROM payment_tracking pt
+      LEFT JOIN subscriptions s ON pt.subscription_id = s.subscription_id
+      WHERE pt.tracking_id = $1
+    `;
+    
+    const result = await db.query(query, [tracking_id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment record not found' });
+    }
+    
+    const payment = result.rows[0];
+    
+    res.json({
+      status: payment.status,
+      planType: payment.plan_type,
+      amount: payment.amount,
+      completedAt: payment.completed_at,
+      subscription: payment.subscription_id ? {
+        subscriptionId: payment.subscription_id,
+        jobLimit: payment.job_limit,
+        jobsPosted: payment.jobs_posted,
+        expiresAt: payment.expires_at
+      } : null
+    });
+  } catch (error) {
+    console.error('Payment Status Verification Error:', error);
+    res.status(500).json({ error: 'Failed to verify payment status' });
+  }
 };
 
 // Middleware to check subscription before job creation

@@ -2,8 +2,6 @@
 const express = require('express');
 const router = express.Router();
 const subscriptionController = require("../../controllers/subscriptions/subscriptionController");
-const authMiddleware = require("../../middleware/authMiddleware");
-
 // Get subscription plans
 router.get('/plans', subscriptionController.getSubscriptionPlans);
 
@@ -11,13 +9,13 @@ router.get('/plans', subscriptionController.getSubscriptionPlans);
 router.get('/active',  subscriptionController.getActiveSubscription);
 // router.get('/active', authMiddleware.isAuthenticated, authMiddleware.isCompany, subscriptionController.getActiveSubscription);
 
-// Route to create a PayPal payment for subscription
-router.post('/create-payment',  subscriptionController.createPayPalPayment);
+// Create payment intent
+router.post('/payment/create',  subscriptionController.createPaymentIntent);
 
-// Route to execute PayPal payment after approval
-router.get('/execute-payment', subscriptionController.executePayPalPayment);
+// Process payment
+router.post('/payment/process', subscriptionController.processPayment);
 
-// Route for webhook notifications from PayPal
-router.post('/webhook', subscriptionController.handlePayPalWebhook);
+// Verify payment status
+router.get('/payment/verify', subscriptionController.verifyPaymentStatus);
 
 module.exports = router;
