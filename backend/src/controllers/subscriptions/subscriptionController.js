@@ -66,17 +66,26 @@ exports.getActiveSubscription = async (req, res) => {
 
 // Create PayPal payment
 exports.createPayPalPayment = async (req, res) => {
-  const { planType } = req.body;
+  const { planType, user_id } = req.body;
   const plan = SUBSCRIPTION_PLANS[planType];
+
+  console.log('PayPal Client ID:', process.env.PAYPAL_CLIENT_ID);
+  console.log('PayPal Secret:', process.env.PAYPAL_SECRET);
+  
 
   if (!plan) {
     return res.status(400).json({ error: 'Invalid subscription plan' });
   }
 
+  if (!user_id) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+  
+
   try {
     // Verify company exists
     const companyQuery = `SELECT company_id FROM companies WHERE user_id = $1`;
-    const companyResult = await db.query(companyQuery, [req.user.user_id]);
+    const companyResult = await db.query(companyQuery, [user_id]);
     
     if (companyResult.rows.length === 0) {
       return res.status(404).json({ error: 'Company profile not found' });
@@ -89,7 +98,8 @@ exports.createPayPalPayment = async (req, res) => {
     
     // Create payment payload for PayPal
     const paymentJson = {
-      "intent": "sale",
+      // "intent": "sale",
+      "intent": "authorize",
       "payer": {
         "payment_method": "paypal"
       },
@@ -102,26 +112,32 @@ exports.createPayPalPayment = async (req, res) => {
           "items": [{
             "name": plan.description,
             "sku": planType,
-            "price": plan.amount.toString(),
-            "currency": "INR",
+            "price": plan.amount.toFixed(2).toString(),
+            "currency": "USD", // Use USD instead of INR
             "quantity": 1
           }]
         },
         "amount": {
-          "currency": "INR",
-          "total": plan.amount.toString()
+          "currency": "USD", // Use USD instead of INR
+          "total": plan.amount.toFixed(2).toString()
         },
         "description": `Freelance Platform Subscription - ${plan.description}`,
-        "custom": paymentTrackingId // Store our tracking ID in PayPal payment
+        "custom": paymentTrackingId
       }]
-    };
+    };    
+
+    console.log('PayPal Payment JSON:', JSON.stringify(paymentJson, null, 2));
+
+    console.log('Return URL:', `${process.env.FRONTEND_URL}/payment/success?tracking_id=${paymentTrackingId}`);
+console.log('Cancel URL:', `${process.env.FRONTEND_URL}/payment/cancel`);
 
     // Create the payment in PayPal
     paypal.payment.create(paymentJson, async (error, payment) => {
       if (error) {
-        console.error('PayPal Payment Creation Error:', error);
-        return res.status(500).json({ error: 'Failed to create PayPal payment' });
+        console.error('PayPal Payment Error:', JSON.stringify(error.response, null, 2));
+        return res.status(500).json({ error: error.response });
       }
+    
 
       // Store payment tracking info in database
       const trackingQuery = `
