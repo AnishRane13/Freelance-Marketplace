@@ -7,13 +7,44 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Reset selected plan when modal opens
+  // Load PayPal Script when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchSubscriptionPlans();
+      loadPayPalScript();
     }
   }, [isOpen]);
+
+  // Load PayPal JavaScript SDK
+  const loadPayPalScript = () => {
+    // Remove any existing PayPal script
+    const existingScript = document.getElementById('paypal-script');
+    if (existingScript) {
+      existingScript.remove();
+      setPaypalLoaded(false);
+    }
+
+    // Create a new script element
+    const script = document.createElement('script');
+    script.id = 'paypal-script';
+    script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID || 'sb'}&currency=INR`;
+    script.async = true;
+    
+    script.onload = () => setPaypalLoaded(true);
+    script.onerror = () => setError('Failed to load PayPal SDK');
+    
+    document.body.appendChild(script);
+    
+    // Cleanup on unmount
+    return () => {
+      if (document.getElementById('paypal-script')) {
+        document.getElementById('paypal-script').remove();
+      }
+    };
+  };
 
   const fetchSubscriptionPlans = async () => {
     setIsLoading(true);
@@ -36,7 +67,7 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
     setSelectedPlan(planKey);
   };
 
-  const handlePurchase = async () => {
+  const handlePayPalPayment = async () => {
     if (!selectedPlan) {
       setError('Please select a subscription plan');
       return;
@@ -46,39 +77,44 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
     setError(null);
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Create subscription record in database
-      const planDetails = plans[selectedPlan];
-      const response = await fetch('http://localhost:5000/subscription/purchase', {
+      // Create PayPal payment through your backend
+      const response = await fetch('http://localhost:5000/subscription/create-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          company_id: companyId,
-          plan_type: selectedPlan,
-          amount: planDetails.amount,
-          job_limit: planDetails.jobLimit,
-          duration: planDetails.duration
+          user_id: companyId,
+          planType: selectedPlan
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to process subscription');
+        throw new Error(errorData.error || 'Failed to create payment');
       }
 
-      // Call the callback function to notify parent component
-      onSubscriptionPurchased();
-      // Explicitly close the modal
-      onClose();
+      const { redirectUrl } = await response.json();
+      
+      if (redirectUrl) {
+        // Redirect to PayPal approval page
+        setIsRedirecting(true);
+        window.location.href = redirectUrl;
+      } else {
+        throw new Error('No redirect URL received from server');
+      }
     } catch (error) {
       setError(error.message || 'Error processing payment');
-    } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Helper function for displaying success message
+  const handlePaymentSuccess = () => {
+    // This would be called when redirected back from PayPal with success
+    onSubscriptionPurchased();
+    onClose();
   };
 
   // Don't render anything if modal is closed
@@ -123,21 +159,13 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
               <p className="text-blue-100 mt-1">Unlock your full potential with our premium plans</p>
             </div>
             <button
-            onClick={handleClose}
+              onClick={handleClose}
               className="bg-white bg-opacity-20 rounded-full p-2 hover:bg-opacity-30 transition-all z-10"
               type="button"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
-            {/* <button
-                  onClick={handleClose}
-                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  disabled={isProcessing}
-                  type="button"
-                >
-                  Cancel
-                </button> */}
           </div>
           
           {/* Abstract shapes for design flair */}
@@ -158,6 +186,11 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
                 <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
                 <p>{error}</p>
               </div>
+            </div>
+          ) : isRedirecting ? (
+            <div className="flex flex-col justify-center items-center py-16">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
+              <p className="text-gray-500">Redirecting to PayPal...</p>
             </div>
           ) : (
             <>
@@ -206,7 +239,7 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
                         </div>
                         <div className="mb-2">
                           <span className={`text-3xl font-bold ${selectedPlan === key ? 'text-white' : 'text-blue-600'}`}>
-                            ${plan.amount}
+                            ₹{plan.amount}
                           </span>
                           <span className={`text-sm ml-1 ${selectedPlan === key ? 'text-blue-100' : 'text-gray-500'}`}>
                             / {plan.duration} days
@@ -252,7 +285,7 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
                   Cancel
                 </button>
                 <button
-                  onClick={handlePurchase}
+                  onClick={handlePayPalPayment}
                   disabled={!selectedPlan || isProcessing}
                   className={`px-8 py-3 rounded-lg text-white shadow-lg transition-all ${
                     !selectedPlan || isProcessing
@@ -267,7 +300,7 @@ const SubscriptionModal = ({ isOpen, onClose, onSubscriptionPurchased, companyId
                       Processing...
                     </>
                   ) : (
-                    'Activate Subscription'
+                    'Pay with PayPal'
                   )}
                 </button>
               </div>
