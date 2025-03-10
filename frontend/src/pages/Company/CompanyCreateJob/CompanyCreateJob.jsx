@@ -145,6 +145,8 @@ const CompanyCreateJob = () => {
         subscription_id: subscriptionData?.subscription_id
       };
 
+      console.log("jobData is here", jobData)
+
       const response = await fetch(`http://localhost:5000/jobs`, {
         method: 'POST',
         headers: {

@@ -6,7 +6,6 @@ const quoteController = require('../../controllers/quoteController');
 const { checkSubscriptionBeforeJobPost } = require('../../controllers/subscriptionController');
 const authMiddleware = require('../../middlewares/authMiddleware');
 
-// Create a new job (company only)
 router.post('/create', 
   authMiddleware.isAuthenticated,
   authMiddleware.isCompany, 
@@ -33,11 +32,39 @@ router.post('/:jobId/quote',
   quoteController.submitQuote
 );
 
+// Get quotes submitted by user
+router.get('/quotes/user', 
+  authMiddleware.isAuthenticated,
+  authMiddleware.isUser,
+  quoteController.getUserQuotes
+);
+
 // Select a freelancer for a job (company only)
 router.post('/:jobId/select/:userId', 
   authMiddleware.isAuthenticated,
   authMiddleware.isCompany,
   jobController.selectFreelancer
+);
+
+// Mark a job as complete (company only)
+router.post('/:jobId/complete', 
+  authMiddleware.isAuthenticated,
+  authMiddleware.isCompany,
+  jobController.markJobComplete
+);
+
+// Process payment for a completed job (company only)
+router.post('/:jobId/payment', 
+  authMiddleware.isAuthenticated,
+  authMiddleware.isCompany,
+  paymentController.processJobPayment
+);
+
+// Capture job payment (company only)
+router.post('/payment/capture', 
+  authMiddleware.isAuthenticated,
+  authMiddleware.isCompany,
+  paymentController.captureJobPayment
 );
 
 module.exports = router;

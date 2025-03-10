@@ -9,6 +9,8 @@ CREATE TABLE users (
     cover_photo VARCHAR(255), -- S3 URL
     bio TEXT,
     categories INTEGER[] DEFAULT '{}',  -- category id will be here
+    total_earnings INT DEFAULT 0,
+    payment_email VARCHAR(255), -- Dont add this-------------------it is wrong
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -171,6 +173,19 @@ CREATE TABLE notifications (
     message TEXT NOT NULL, -- Notification content
     is_read BOOLEAN DEFAULT FALSE, -- Tracks if user has seen it
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- AGREEMENTS TABLE (For PDF contracts)
+CREATE TABLE agreements (
+    agreement_id SERIAL PRIMARY KEY,
+    job_id INT REFERENCES jobs(job_id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    company_id INT REFERENCES companies(company_id) ON DELETE CASCADE,
+    pdf_url VARCHAR(255) NOT NULL, -- S3 URL to the agreement PDF
+    terms TEXT NOT NULL, -- Terms and conditions text
+    status VARCHAR(20) CHECK (status IN ('pending', 'accepted', 'rejected')) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    response_at TIMESTAMP -- When the user responded
 );
 
 
