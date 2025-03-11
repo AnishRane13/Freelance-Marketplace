@@ -170,32 +170,34 @@ const PaymentCheckout = ({ paymentIntentId, amount, description, onSuccess, onCa
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl max-w-full w-full mx-auto overflow-hidden transform transition-all">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-xl"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2 blur-lg"></div>
-        
-        <div className="flex items-center mb-4 relative">
-          <button 
-            onClick={onCancel} 
-            className="mr-3 bg-white/20 rounded-full p-1.5 hover:bg-white/30 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="text-xl font-semibold">Secure Checkout</h2>
-        </div>
-        
-        {paymentDetails && (
-          <div className="mt-2 relative">
-            <div className="text-sm text-blue-100">Payment for:</div>
-            <div className="font-medium">{paymentDetails.description}</div>
-            <div className="mt-2 text-3xl font-bold">₹{paymentDetails.amount.toFixed(2)}</div>
-          </div>
-        )}
+    <div className="bg-white rounded-xl shadow-2xl max-w-full w-full mx-auto overflow-hidden transform transition-all h-[600px] flex flex-col">
+    {/* Header - Keep this fixed */}
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white relative overflow-hidden flex-shrink-0">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-xl"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2 blur-lg"></div>
+      
+      <div className="flex items-center mb-4 relative">
+        <button 
+          onClick={onCancel} 
+          className="mr-3 bg-white/20 rounded-full p-1.5 hover:bg-white/30 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h2 className="text-xl font-semibold">Secure Checkout</h2>
       </div>
+      
+      {paymentDetails && (
+        <div className="mt-2 relative">
+          <div className="text-sm text-blue-100">Payment for:</div>
+          <div className="font-medium">{paymentDetails.description}</div>
+          <div className="mt-2 text-3xl font-bold">₹{paymentDetails.amount.toFixed(2)}</div>
+        </div>
+      )}
+    </div>
 
+    {/* Scrollable content area */}
+    <div className="flex-grow overflow-y-auto">
       {/* Virtual Credit Card (only show when card number is entered) */}
       {cardNumber && (
         <div className="px-6 pt-6">
@@ -421,6 +423,7 @@ const PaymentCheckout = ({ paymentIntentId, amount, description, onSuccess, onCa
         )}
       </div>
     </div>
+  </div>
   );
 };
 

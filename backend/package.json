@@ -12,6 +12,8 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -22,6 +24,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemon": "^3.1.9",
     "paypal-rest-sdk": "^1.8.1",
+    "pdfkit": "^0.16.0",
     "pg": "^8.13.1",
     "socket.io": "^4.8.1",
     "uuid": "^11.0.5"

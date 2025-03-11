@@ -292,9 +292,20 @@ exports.verifyPaymentStatus = async (req, res) => {
 // Middleware to check subscription before job creation
 exports.checkSubscriptionBeforeJobPost = async (req, res, next) => {
   try {
-    const companyId = req.user.company_id;
+  // Get user_id from request body instead of req.user
+  const userId = req.body.company_id;
 
-    // Find the most recent active subscription
+    // Fetch company_id
+    const companyQuery = `SELECT company_id FROM companies WHERE user_id = $1`;
+    const companyResult = await db.query(companyQuery, [userId]);
+
+    if (companyResult.rows.length === 0) {
+      return res.status(403).json({ error: 'You are not registered as a company.' });
+    }
+
+    const companyId = companyResult.rows[0].company_id;
+
+    // Fetch subscription details
     const subscriptionQuery = `
       SELECT * FROM subscriptions 
       WHERE company_id = $1 
@@ -304,16 +315,17 @@ exports.checkSubscriptionBeforeJobPost = async (req, res, next) => {
       LIMIT 1
     `;
 
-    const result = await db.query(subscriptionQuery, [companyId]);
+    const subscriptionResult = await db.query(subscriptionQuery, [companyId]);
 
-    if (result.rows.length === 0) {
-      return res.status(403).json({ 
-        error: 'No active subscription. Please purchase a subscription to post jobs.' 
-      });
+    if (subscriptionResult.rows.length === 0) {
+      return res.status(403).json({ error: 'No active subscription. Please purchase a subscription to post jobs.' });
     }
 
-    // Attach subscription to request for job creation route
-    req.activeSubscription = result.rows[0];
+    // Attach subscription details and company_id to request
+    req.activeSubscription = subscriptionResult.rows[0];
+    req.companyId = companyId;
+
+    console.log('Middleware passed, moving to next function');
     next();
   } catch (error) {
     console.error('Subscription Check Error:', error);

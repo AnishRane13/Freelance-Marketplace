@@ -1,5 +1,5 @@
 // src/utils/notificationHelper.js
-const db = require('../config/database');
+const db = require('../../db/db');
 
 /**
  * Send a notification to a user

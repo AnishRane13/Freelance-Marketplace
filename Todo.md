@@ -45,6 +45,7 @@ https://chatgpt.com/c/67c9c3fa-cf74-800e-a8ca-2580174d7080
 read this for complete job and payment and subscription related things
 
 
+https://claude.ai/chat/bcdc04d7-893f-443d-8244-cb2814dde7e4
 
 subscriptions
 

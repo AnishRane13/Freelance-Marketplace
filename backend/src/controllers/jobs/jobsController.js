@@ -1,83 +1,43 @@
 // src/controllers/jobController.js
 const db = require('../../../db/db');
-const { updateJobPostCount } = require('./subscriptionController');
-const { generateAgreementPDF } = require('../utils/pdfGenerator');
-const { sendNotification } = require('../utils/notificationHelper');
+const { updateJobPostCount } = require('../subscriptions/subscriptionController');
+const { generateAgreementPDF } = require('../../utils/pdfGenerator');
+const { sendNotification } = require('../../utils/notificationHelper');
 
 exports.createJob = async (req, res) => {
-  const { title, description, category_id, price, location, deadline } = req.body;
-  const company_id = req.user.company_id;
-  
-  // Validate required fields
-  if (!title || !description || !category_id || !price || !location || !deadline) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-  
   try {
-    // Check if active subscription exists (should already be checked by middleware)
+    const { title, description, category_id, price, location, deadline, status } = req.body;
+    const companyId = req.companyId; // Now properly retrieved
     const subscription = req.activeSubscription;
-    
-    // Start transaction
-    await db.query('BEGIN');
-    
-    // Insert new job
+
+    if (!subscription) {
+      return res.status(403).json({ error: "You don't have an active subscription." });
+    }
+
     const jobQuery = `
-      INSERT INTO jobs 
-      (company_id, title, description, category_id, price, location, deadline, status, created_at) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'open', CURRENT_TIMESTAMP) 
-      RETURNING *
+      INSERT INTO jobs (company_id, title, description, category_id, price, location, deadline, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING job_id
     `;
-    
-    const jobResult = await db.query(jobQuery, [
-      company_id, title, description, category_id, price, location, deadline
-    ]);
-    
-    const newJob = jobResult.rows[0];
-    
-    // Update job post count in subscription
-    const subscriptionResult = await updateJobPostCount(subscription.subscription_id);
-    const updatedSubscription = subscriptionResult.rows[0];
-    
-    // Create notifications for users with matching category
-    const notificationQuery = `
-      INSERT INTO notifications (recipient_id, job_id, type, message, is_read, created_at)
-      SELECT 
-        user_id, 
-        $1, 
-        'job_update', 
-        $2, 
-        false, 
-        CURRENT_TIMESTAMP
-      FROM users
-      WHERE 
-        user_type = 'user' 
-        AND $3 = ANY(categories)
-    `;
-    
-    await db.query(notificationQuery, [
-      newJob.job_id,
-      `New job posted: ${title}`,
-      category_id
-    ]);
-    
-    // Commit transaction
-    await db.query('COMMIT');
-    
-    res.status(201).json({
-      job: newJob,
-      subscription: {
-        job_limit: updatedSubscription.job_limit,
-        jobs_posted: updatedSubscription.jobs_posted,
-        remaining: updatedSubscription.job_limit - updatedSubscription.jobs_posted
-      }
-    });
+
+    const result = await db.query(jobQuery, [companyId, title, description, category_id, price, location, deadline, status]);
+
+    if (result.rows.length > 0) {
+      // Update jobs_posted count
+      const updateSubscriptionQuery = `
+        UPDATE subscriptions 
+        SET jobs_posted = jobs_posted + 1 
+        WHERE subscription_id = $1
+      `;
+      await db.query(updateSubscriptionQuery, [subscription.subscription_id]);
+    }
+
+    res.status(201).json({ success: true, job: result.rows[0] });
   } catch (error) {
-    // Rollback transaction on error
-    await db.query('ROLLBACK');
-    console.error('Job Creation Error:', error);
-    res.status(500).json({ error: 'Failed to create job' });
+    console.error("Job Creation Error:", error);
+    res.status(500).json({ error: "Failed to create job" });
   }
 };
+
 
 exports.getJobsByCategory = async (req, res) => {
   const { categoryId } = req.params;

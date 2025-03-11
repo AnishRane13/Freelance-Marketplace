@@ -1,7 +1,7 @@
 // src/controllers/paymentController.js
-const db = require('../config/database');
+const db = require('../../../db/db');
 const paypal = require('@paypal/checkout-server-sdk');
-const { sendNotification } = require('../utils/notificationHelper');
+const { sendNotification } = require('../../utils/notificationHelper');
 
 // PayPal setup
 function getPayPalClient() {

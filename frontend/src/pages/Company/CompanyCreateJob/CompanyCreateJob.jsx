@@ -52,6 +52,8 @@ const CompanyCreateJob = () => {
     try {
       const response = await fetch(`http://localhost:5000/subscription/active?company_id=${companyId}`);
       const data = await response.json();
+
+      console.log("dtaatatatat",data)
       
       if (response.ok) {
         setHasActiveSubscription(data.hasActiveSubscription);
@@ -147,7 +149,7 @@ const CompanyCreateJob = () => {
 
       console.log("jobData is here", jobData)
 
-      const response = await fetch(`http://localhost:5000/jobs`, {
+      const response = await fetch(`http://localhost:5000/jobs/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

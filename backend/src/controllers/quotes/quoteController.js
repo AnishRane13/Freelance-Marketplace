@@ -1,6 +1,6 @@
 // src/controllers/quoteController.js
-const db = require('../config/database');
-const { sendNotification } = require('../utils/notificationHelper');
+const db = require('../../../db/db');
+const { sendNotification } = require('../../utils/notificationHelper');
 
 exports.submitQuote = async (req, res) => {
   const { jobId } = req.params;
