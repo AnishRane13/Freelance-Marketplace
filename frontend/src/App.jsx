@@ -9,6 +9,7 @@ import UserDashboard from "./pages/User/UserDashboard/UserDashboard.jsx";
 import CompanyDashboard from "./pages/Company/CompanyDashboard/CompanyDashboard.jsx";
 import CompanyProfile from "./pages/Company/CompanyProfile/CompanyProfile.jsx";
 import UserProfile from "./pages/User/UserProfile/UserProfile.jsx";
+import UserJobs from "./pages/User/UserJobs/UserJobs.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import CompanyCreateJob from "./pages/Company/CompanyCreateJob/CompanyCreateJob.jsx";
@@ -49,6 +50,7 @@ function App() {
           <Route element={<ProtectedRoute element={<UserLayout />} allowedType="user" />}>
             <Route path="/user/dashboard" element={<UserDashboard />} />
             <Route path="/user/profile/:user_id" element={<UserProfile />} />
+            <Route path="/user/jobs/:user_id" element={<UserJobs />} />
             {/* <Route path="/user/settings" element={<UserSettings />} /> */}
           </Route>
 

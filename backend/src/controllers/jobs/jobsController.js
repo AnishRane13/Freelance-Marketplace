@@ -39,28 +39,65 @@ exports.createJob = async (req, res) => {
 };
 
 
-exports.getJobsByCategory = async (req, res) => {
-  const { categoryId } = req.params;
+exports.getJobsForUserCategories = async (req, res) => {
   const userId = req.user.user_id;
-  
+  const { categoryId } = req.query; // Optional category filter from dropdown
+
   try {
-    const query = `
-      SELECT j.*, c.name as company_name, cat.name as category_name,
-      EXISTS(SELECT 1 FROM quotes WHERE job_id = j.job_id AND user_id = $1) as has_quoted
+    // Fetch user categories
+    const userCategoriesQuery = `SELECT categories FROM users WHERE user_id = $1`;
+    const userCategoriesResult = await db.query(userCategoriesQuery, [userId]);
+
+    if (userCategoriesResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userCategories = userCategoriesResult.rows[0].categories;
+
+    if (userCategories.length === 0 && !categoryId) {
+      return res.json({ jobs: [] }); // Return empty array if user has no categories
+    }
+
+    // Base query to fetch jobs
+    let query = `
+      SELECT j.*, 
+             c.name AS company_name, 
+             cat.name AS category_name,
+             comp.website, 
+             comp.location AS company_location,
+             EXISTS(SELECT 1 FROM quotes WHERE job_id = j.job_id AND user_id = $1) AS has_quoted
       FROM jobs j
       JOIN companies comp ON j.company_id = comp.company_id
       JOIN users c ON comp.user_id = c.user_id
       JOIN categories cat ON j.category_id = cat.category_id
-      WHERE j.category_id = $2
-      AND j.status = 'open'
-      ORDER BY j.created_at DESC
+      WHERE j.status = 'open'
     `;
-    
-    const result = await db.query(query, [userId, categoryId]);
-    res.json(result.rows);
+
+    let queryParams = [userId];
+    let paramIndex = 2; // Starting with $2
+
+    // Apply filtering logic
+    if (categoryId && categoryId !== "all") {
+      // If specific category is selected, use only that category
+      query += ` AND j.category_id = $${paramIndex}`;
+      queryParams.push(categoryId);
+      paramIndex++;
+    } else if (userCategories.length > 0) {
+      // Otherwise use all user's categories
+      query += ` AND j.category_id = ANY($${paramIndex})`;
+      queryParams.push(userCategories);
+      paramIndex++;
+    }
+
+    // Add ordering
+    query += " ORDER BY j.created_at DESC";
+
+    // Execute query
+    const result = await db.query(query, queryParams);
+    res.json({ jobs: result.rows });
   } catch (error) {
-    console.error('Get Jobs Error:', error);
-    res.status(500).json({ error: 'Failed to fetch jobs' });
+    console.error("Get Jobs Error:", error);
+    res.status(500).json({ error: "Failed to fetch jobs" });
   }
 };
 

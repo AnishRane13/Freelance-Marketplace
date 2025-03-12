@@ -13,7 +13,7 @@ router.post('/create',
 
 // Get jobs by category
 router.get('/category/:categoryId', 
-  jobController.getJobsByCategory
+  jobController.getJobsForUserCategories
 );
 
 // Get job details with quotes (for company)
