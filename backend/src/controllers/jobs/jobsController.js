@@ -76,7 +76,7 @@ exports.getUserJobs = async (req, res) => {
       JOIN companies comp ON j.company_id = comp.company_id
       JOIN users c ON comp.user_id = c.user_id
       JOIN categories cat ON j.category_id = cat.category_id
-      WHERE j.status = 'open'
+      WHERE j.status = 'open' AND j.deadline >= CURRENT_DATE
     `;
 
     let queryParams = [userId];

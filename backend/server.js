@@ -1,4 +1,3 @@
-
 // server.js
 require("dotenv").config({ path: "./conf/.env" });
 const express = require("express");
@@ -6,7 +5,7 @@ const cors = require("cors");
 const session = require("express-session");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const handleSocketEvents = require('./src/controllers/sockerHandlers');
+const handleSocketEvents = require("./src/controllers/sockerHandlers");
 
 // Import Routes
 const registerRoutes = require("./src/routes/RegisterRoutes");
@@ -16,7 +15,8 @@ const categoriesRoutes = require("./src/routes/categories/categories");
 const userRoutes = require("./src/routes/users/userRoutes");
 const postRoutes = require("./src/routes/posts/postRoutes");
 const subscriptionRoutes = require("./src/routes/subscriptions/subscriptionRoutes");
-const jobsRoutes = require("./src/routes/jobs/jobRoutes")
+const jobsRoutes = require("./src/routes/jobs/jobRoutes");
+const quoteRoutes = require("./src/routes/quotes/quoteRoutes");
 // Initialize Express App
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -43,7 +43,7 @@ app.use(
 );
 
 // Make io available in routes
-app.set('io', io);
+app.set("io", io);
 
 // Initialize socket handlers
 handleSocketEvents(io);
@@ -56,7 +56,8 @@ app.use("/categories", categoriesRoutes);
 app.use("/users", userRoutes);
 app.use("/posts", postRoutes);
 app.use("/subscription", subscriptionRoutes);
-app.use("/jobs",jobsRoutes);
+app.use("/jobs", jobsRoutes);
+app.use("/quotes", quoteRoutes);
 
 // Start Server
 httpServer.listen(PORT, () => {
