@@ -39,23 +39,29 @@ exports.createJob = async (req, res) => {
 };
 
 
-exports.getJobsForUserCategories = async (req, res) => {
-  const userId = req.user.user_id;
-  const { categoryId } = req.query; // Optional category filter from dropdown
+exports.getUserJobs = async (req, res) => {
+  const { userId, category } = req.params;
+  // console.log("Request received with userId:", userId, "and category:", category);
 
   try {
     // Fetch user categories
     const userCategoriesQuery = `SELECT categories FROM users WHERE user_id = $1`;
+    // console.log("Executing query:", userCategoriesQuery, "with params:", [userId]);
+    
     const userCategoriesResult = await db.query(userCategoriesQuery, [userId]);
+    // console.log("User categories result:", userCategoriesResult.rows);
 
     if (userCategoriesResult.rows.length === 0) {
+      // console.log("User not found");
       return res.status(404).json({ error: "User not found" });
     }
 
     const userCategories = userCategoriesResult.rows[0].categories;
+    // console.log("User categories:", userCategories);
 
-    if (userCategories.length === 0 && !categoryId) {
-      return res.json({ jobs: [] }); // Return empty array if user has no categories
+    if (userCategories.length === 0 && category === "all") {
+      // console.log("No categories & category filter is 'all', returning empty jobs list.");
+      return res.json({ jobs: [] });
     }
 
     // Base query to fetch jobs
@@ -74,32 +80,39 @@ exports.getJobsForUserCategories = async (req, res) => {
     `;
 
     let queryParams = [userId];
-    let paramIndex = 2; // Starting with $2
+    let paramIndex = 2; // For parameterized queries
+
+    // console.log("Category filter:", category);
 
     // Apply filtering logic
-    if (categoryId && categoryId !== "all") {
-      // If specific category is selected, use only that category
+    if (category && category !== "all") {
       query += ` AND j.category_id = $${paramIndex}`;
-      queryParams.push(categoryId);
+      queryParams.push(category);
+      // console.log("Filtering by specific category:", category);
       paramIndex++;
     } else if (userCategories.length > 0) {
-      // Otherwise use all user's categories
       query += ` AND j.category_id = ANY($${paramIndex})`;
       queryParams.push(userCategories);
+      // console.log("Filtering by user categories:", userCategories);
       paramIndex++;
     }
 
-    // Add ordering
+    // Order jobs by latest
     query += " ORDER BY j.created_at DESC";
+    // console.log("Final query:", query);
+    // console.log("Final query parameters:", queryParams);
 
     // Execute query
     const result = await db.query(query, queryParams);
+    // console.log("Query result:", result.rows);
+
     res.json({ jobs: result.rows });
   } catch (error) {
     console.error("Get Jobs Error:", error);
     res.status(500).json({ error: "Failed to fetch jobs" });
   }
 };
+
 
 exports.getJobDetails = async (req, res) => {
   const { jobId } = req.params;

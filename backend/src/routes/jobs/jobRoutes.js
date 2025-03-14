@@ -11,10 +11,8 @@ router.post('/create',
   jobController.createJob
 );
 
-// Get jobs by category
-router.get('/category/:categoryId', 
-  jobController.getJobsForUserCategories
-);
+// Get jobs for a user with optional category filtering
+router.get('/user/:userId/:category', jobController.getUserJobs);
 
 // Get job details with quotes (for company)
 router.get('/:jobId', 

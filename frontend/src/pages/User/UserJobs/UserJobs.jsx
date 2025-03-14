@@ -46,17 +46,18 @@ const UserJobs = () => {
     const fetchJobs = async () => {
       setLoading(true);
       try {
-        // Use the correct API endpoint based on the controller
-        let url = `http://localhost:5000/category/${selectedCategory}`;
+        // Updated URL to match your backend route structure
+        let url = `http://localhost:5000/jobs/user/${user_id}/${selectedCategory}`;
+        console.log(url);
         
-        // If all categories are selected, handle it slightly differently
+        // If 'all' is selected, make sure we're using the right endpoint
         if (selectedCategory === 'all') {
-          url = `http://localhost:5000/category/all`;
+          url = `http://localhost:5000/jobs/user/${user_id}/all`;
         }
-        
+  
         const response = await fetch(url);
         const data = await response.json();
-        
+  
         if (response.ok) {
           setJobs(data.jobs || []);
           setError(null);
@@ -71,8 +72,10 @@ const UserJobs = () => {
         setLoading(false);
       }
     };
-
-    fetchJobs();
+  
+    if (user_id) {
+      fetchJobs();
+    }
   }, [selectedCategory, user_id]);
 
   const handleCategoryChange = (categoryId) => {
