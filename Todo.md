@@ -51,3 +51,40 @@ subscriptions
 
 1. To get if the company has subscription or not
 2. To 
+
+
+Jobs extra APIs
+
+https://claude.ai/chat/de5e6b62-b6d7-45a9-8408-bf4c4933da0f
+
+Jobs 
+1. Get All Company Jobs API- Get All Company Jobs API
+This endpoint will fetch all jobs posted by the logged-in company with their basic details:
+
+2. Cancel Job API - Companies should be able to cancel jobs that haven't yet been assigned:
+
+3. Get Job Quotes API
+This endpoint will fetch all quotes received for a specific job:
+
+4. Update Job API
+Companies should be able to update certain aspects of an open job:
+
+5. Get Job Agreements API -- I guess we will not use this one
+Fetch any agreements related to a specific job:
+
+6. Get Job Completion Status API
+Check the status of in-progress or completed jobs
+
+7. 
+
+
+
+
+
+
+
+
+For Job Details view Details --company side
+Pending code from claude --- anish.rane@ves.ac.in
+
+https://claude.ai/chat/34a51698-c488-4e2b-8c7a-3d78a9a69746

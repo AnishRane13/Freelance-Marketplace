@@ -9,6 +9,7 @@ import UserDashboard from "./pages/User/UserDashboard/UserDashboard.jsx";
 import CompanyDashboard from "./pages/Company/CompanyDashboard/CompanyDashboard.jsx";
 import CompanyProfile from "./pages/Company/CompanyProfile/CompanyProfile.jsx";
 import CompanyJobs from "./pages/Company/CompanyJobs/CompanyJobs.jsx";
+import CompanyJobDetails from "./pages/Company/CompanyJobDetails/CompanyJobDetails.jsx";
 import UserProfile from "./pages/User/UserProfile/UserProfile.jsx";
 import UserJobs from "./pages/User/UserJobs/UserJobs.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -61,6 +62,7 @@ function App() {
             <Route path="/company/profile/:user_id" element={<CompanyProfile />} />
             <Route path="/company/createjob" element={<CompanyCreateJob />} />
             <Route path="/company/jobs/:user_id" element={<CompanyJobs />} />
+            <Route path="/company/jobDetails/:job_id" element={<CompanyJobDetails />} />
             {/* <Route path="/company/manage" element={<CompanyManage />} /> */}
             {/* <Route path="/company/settings" element={<CompanySettings />} /> */}
           </Route>

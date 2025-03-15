@@ -1,87 +1,58 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { CalendarDays, Briefcase, Users, Clock, AlertCircle, Plus, Eye, Edit, Trash2, RefreshCw } from 'lucide-react';
-import LoadingSpinner from '../../../components/LoadingSpinner';
+import { useNavigate } from 'react-router-dom';
+import { Briefcase, Users, Clock, CalendarDays, Plus, Edit, Trash2, Eye } from 'lucide-react';
 
-const CompanyJobs = () => {
+const JobsList = () => {
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'active', 'expired'
-
-  const navigate = useNavigate(); 
-  
-  const userId = localStorage.getItem("user_id");
+  const [activeFilter, setActiveFilter] = useState('all');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!userId) return;
-    const fetchCompanyJobs = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`http://localhost:5000/jobs/company/getAllJobsByCompany/${userId}`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        setJobs(data.jobs || []);
-      } catch (err) {
-        console.error('Error fetching company jobs:', err);
-        setError('Failed to load jobs. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchCompanyJobs();
-  }, [userId]);
-  
-  // Function to format date
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    // Fetch jobs logic here
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      // Fetch jobs from your API
+      const response = await fetch('/api/jobs/company');
+      const data = await response.json();
+      setJobs(data.jobs || []);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    }
   };
 
   const handleCreateJob = () => {
-    window.location.href = "/create-job";
+    navigate('/jobs/create');
   };
 
-  const filteredJobs = activeFilter === 'all' 
-    ? jobs 
-    : activeFilter === 'active' 
-      ? jobs.filter(job => !job.expired) 
-      : jobs.filter(job => job.expired);
+  const handleViewDetails = (jobId) => {
+    navigate(`/jobs/${jobId}`);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   const getStatusColor = (expired) => {
     return expired 
-      ? { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' }
-      : { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' };
+      ? { bg: 'bg-red-100', text: 'text-red-800' } 
+      : { bg: 'bg-green-100', text: 'text-green-800' };
   };
 
-  if (loading) {
-    return (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen flex justify-center items-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
-            <div className="flex items-center">
-              <AlertCircle className="h-6 w-6 text-red-500" />
-              <div className="ml-3">
-                <h3 className="text-lg font-medium text-red-800">Error</h3>
-                <p className="text-red-700 mt-1">{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Filter jobs based on active filter
+  const filteredJobs = jobs.filter(job => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'active') return !job.expired;
+    if (activeFilter === 'expired') return job.expired;
+    return true;
+  });
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen">
@@ -232,7 +203,10 @@ const CompanyJobs = () => {
                         <span></span>
                       )}
                     </div>
-                    <button onClick={()=> navigate(`/company/jobDetails/${job.job_id}`)} className="inline-flex items-center px-3.5 py-2 rounded-lg shadow-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium">
+                    <button 
+                      onClick={() => handleViewDetails(job.job_id)}
+                      className="inline-flex items-center px-3.5 py-2 rounded-lg shadow-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-medium"
+                    >
                       <Eye className="h-4 w-4 mr-1.5" />
                       View Details
                     </button>
@@ -247,4 +221,4 @@ const CompanyJobs = () => {
   );
 };
 
-export default CompanyJobs;
+export default JobsList;

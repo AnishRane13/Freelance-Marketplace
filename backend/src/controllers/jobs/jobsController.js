@@ -38,6 +38,30 @@ exports.createJob = async (req, res) => {
   }
 };
 
+exports.getCompanyJobs = async (req, res) => {
+
+  const companyId = req.params.userId;
+
+  try {
+    const query = `
+      SELECT j.*, 
+             cat.name AS category_name,
+             (SELECT COUNT(*) FROM quotes WHERE job_id = j.job_id) AS quotes_count,
+             (CASE WHEN j.deadline < CURRENT_DATE THEN true ELSE false END) AS expired
+      FROM jobs j
+      JOIN categories cat ON j.category_id = cat.category_id
+      WHERE j.company_id = $1
+      ORDER BY j.created_at DESC
+    `;
+    
+    const result = await db.query(query, [companyId]);
+    
+    res.json({ jobs: result.rows });
+  } catch (error) {
+    console.error("Get Company Jobs Error:", error);
+    res.status(500).json({ error: "Failed to fetch company jobs" });
+  }
+};
 
 exports.getUserJobs = async (req, res) => {
   const { userId, category } = req.params;
@@ -115,33 +139,32 @@ exports.getUserJobs = async (req, res) => {
 
 
 exports.getJobDetails = async (req, res) => {
-  const { jobId } = req.params;
-  const userId = req.user.user_id;
-  const userType = req.user.user_type;
-  
+  const { job_id } = req.params;  // Use req.params for job_id
+  const { userId, userType } = req.body;
+
   try {
     // Get job details
     const jobQuery = `
-      SELECT j.*, c.name as company_name, cat.name as category_name,
-        u.profile_picture as company_profile_picture
-      FROM jobs j
-      JOIN companies comp ON j.company_id = comp.company_id
-      JOIN users u ON comp.user_id = u.user_id
-      JOIN categories cat ON j.category_id = cat.category_id
-      WHERE j.job_id = $1
-    `;
+   SELECT j.*, u.name as company_name, cat.name as category_name, 
+  u.profile_picture as company_profile_picture, j.company_id
+FROM jobs j
+JOIN companies comp ON j.company_id = comp.company_id
+JOIN users u ON comp.user_id = u.user_id 
+JOIN categories cat ON j.category_id = cat.category_id
+WHERE j.job_id = $1
+  `;  
     
-    const jobResult = await db.query(jobQuery, [jobId]);
+    const jobResult = await db.query(jobQuery, [job_id]);
     
     if (jobResult.rows.length === 0) {
       return res.status(404).json({ error: 'Job not found' });
     }
     
     const job = jobResult.rows[0];
-    
-    // Get quotes if user is the company that posted the job
+
+    // Get quotes only if user is the company that posted the job
     let quotes = [];
-    if (userType === 'company' && job.company_id === req.user.company_id) {
+    if (userType === 'company' && job.company_id == userId) {
       const quotesQuery = `
         SELECT q.*, u.name, u.profile_picture, 
           (SELECT COUNT(*) FROM job_completion jc WHERE jc.user_id = q.user_id AND jc.status = 'completed') as completed_jobs
@@ -151,10 +174,10 @@ exports.getJobDetails = async (req, res) => {
         ORDER BY q.created_at DESC
       `;
       
-      const quotesResult = await db.query(quotesQuery, [jobId]);
+      const quotesResult = await db.query(quotesQuery, [job_id]);
       quotes = quotesResult.rows;
     }
-    
+
     // Check if there's a selected freelancer
     const selectedQuery = `
       SELECT sf.*, u.name, u.email, u.profile_picture
@@ -162,20 +185,18 @@ exports.getJobDetails = async (req, res) => {
       JOIN users u ON sf.user_id = u.user_id
       WHERE sf.job_id = $1
     `;
-    
-    const selectedResult = await db.query(selectedQuery, [jobId]);
+
+    const selectedResult = await db.query(selectedQuery, [job_id]);
     const selectedFreelancer = selectedResult.rows.length > 0 ? selectedResult.rows[0] : null;
-    
+
     // Check for agreement status
     const agreementQuery = `
-      SELECT *
-      FROM agreements
-      WHERE job_id = $1
+      SELECT * FROM agreements WHERE job_id = $1
     `;
-    
-    const agreementResult = await db.query(agreementQuery, [jobId]);
+
+    const agreementResult = await db.query(agreementQuery, [job_id]);
     const agreement = agreementResult.rows.length > 0 ? agreementResult.rows[0] : null;
-    
+
     res.json({
       job,
       quotes,
@@ -187,6 +208,222 @@ exports.getJobDetails = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch job details' });
   }
 };
+
+
+exports.cancelJob = async (req, res) => {
+  const { jobId } = req.params;
+  const companyId = req.user.company_id;
+  
+  try {
+    // Verify the job belongs to this company and is in 'open' status
+    const checkQuery = `
+      SELECT * FROM jobs
+      WHERE job_id = $1 AND company_id = $2 AND status = 'open'
+    `;
+    
+    const checkResult = await db.query(checkQuery, [jobId, companyId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: "Job not found or cannot be cancelled" });
+    }
+    
+    // Update job status to cancelled
+    const updateQuery = `
+      UPDATE jobs
+      SET status = 'cancelled'
+      WHERE job_id = $1
+      RETURNING *
+    `;
+    
+    const result = await db.query(updateQuery, [jobId]);
+    
+    // Notify freelancers who submitted quotes
+    const quotesQuery = `
+      SELECT user_id FROM quotes WHERE job_id = $1
+    `;
+    
+    const quotesResult = await db.query(quotesQuery, [jobId]);
+    
+    for (const row of quotesResult.rows) {
+      await sendNotification(
+        row.user_id,
+        jobId,
+        'job_update',
+        `The job you quoted on has been cancelled by the company.`
+      );
+    }
+    
+    res.json({ message: "Job cancelled successfully", job: result.rows[0] });
+  } catch (error) {
+    console.error("Cancel Job Error:", error);
+    res.status(500).json({ error: "Failed to cancel job" });
+  }
+};
+
+exports.getJobQuotes = async (req, res) => {
+  const { jobId } = req.params;
+  const companyId = req.user.company_id;
+  
+  try {
+    // Verify the job belongs to this company
+    const checkQuery = `
+      SELECT * FROM jobs
+      WHERE job_id = $1 AND company_id = $2
+    `;
+    
+    const checkResult = await db.query(checkQuery, [jobId, companyId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+    
+    // Get all quotes with freelancer details
+    const quotesQuery = `
+      SELECT q.*,
+             u.name, u.profile_picture, u.bio,
+             (SELECT COUNT(*) FROM selected_freelancers 
+              WHERE user_id = q.user_id) AS jobs_selected,
+             (SELECT COUNT(*) FROM selected_freelancers sf
+              JOIN jobs j ON sf.job_id = j.job_id
+              WHERE sf.user_id = q.user_id AND j.status = 'completed') AS jobs_completed
+      FROM quotes q
+      JOIN users u ON q.user_id = u.user_id
+      WHERE q.job_id = $1
+      ORDER BY q.created_at DESC
+    `;
+    
+    const result = await db.query(quotesQuery, [jobId]);
+    
+    res.json({ quotes: result.rows });
+  } catch (error) {
+    console.error("Get Job Quotes Error:", error);
+    res.status(500).json({ error: "Failed to fetch job quotes" });
+  }
+};
+
+exports.updateJob = async (req, res) => {
+  const { jobId } = req.params;
+  const companyId = req.user.company_id;
+  const { title, description, price, location, deadline } = req.body;
+  
+  try {
+    // Verify the job belongs to this company and is in 'open' status
+    const checkQuery = `
+      SELECT * FROM jobs
+      WHERE job_id = $1 AND company_id = $2 AND status = 'open'
+    `;
+    
+    const checkResult = await db.query(checkQuery, [jobId, companyId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: "Job not found or cannot be updated" });
+    }
+    
+    // Update job details
+    const updateQuery = `
+      UPDATE jobs
+      SET title = $1, description = $2, price = $3, location = $4, deadline = $5
+      WHERE job_id = $6
+      RETURNING *
+    `;
+    
+    const result = await db.query(updateQuery, [
+      title, description, price, location, deadline, jobId
+    ]);
+    
+    // Notify freelancers who submitted quotes
+    const quotesQuery = `
+      SELECT user_id FROM quotes WHERE job_id = $1
+    `;
+    
+    const quotesResult = await db.query(quotesQuery, [jobId]);
+    
+    for (const row of quotesResult.rows) {
+      await sendNotification(
+        row.user_id,
+        jobId,
+        'job_update',
+        `A job you quoted on has been updated by the company.`
+      );
+    }
+    
+    res.json({ message: "Job updated successfully", job: result.rows[0] });
+  } catch (error) {
+    console.error("Update Job Error:", error);
+    res.status(500).json({ error: "Failed to update job" });
+  }
+};
+
+exports.getJobAgreements = async (req, res) => {
+  const { jobId } = req.params;
+  const companyId = req.user.company_id;
+  
+  try {
+    // Verify the job belongs to this company
+    const checkQuery = `
+      SELECT * FROM jobs
+      WHERE job_id = $1 AND company_id = $2
+    `;
+    
+    const checkResult = await db.query(checkQuery, [jobId, companyId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+    
+    // Get agreement details
+    const agreementQuery = `
+      SELECT a.*,
+             u.name as freelancer_name, u.profile_picture,
+             j.title as job_title
+      FROM agreements a
+      JOIN users u ON a.user_id = u.user_id
+      JOIN jobs j ON a.job_id = j.job_id
+      WHERE a.job_id = $1 AND a.company_id = $2
+    `;
+    
+    const result = await db.query(agreementQuery, [jobId, companyId]);
+    
+    res.json({ agreements: result.rows });
+  } catch (error) {
+    console.error("Get Job Agreements Error:", error);
+    res.status(500).json({ error: "Failed to fetch job agreements" });
+  }
+};
+
+exports.getJobCompletionStatus = async (req, res) => {
+  const { jobId } = req.params;
+  const companyId = req.user.company_id;
+  
+  try {
+    // Get comprehensive job status with freelancer details
+    const query = `
+      SELECT j.*,
+             sf.user_id as freelancer_id,
+             u.name as freelancer_name, u.profile_picture,
+             a.status as agreement_status,
+             (SELECT status FROM payments WHERE job_id = j.job_id LIMIT 1) as payment_status
+      FROM jobs j
+      LEFT JOIN selected_freelancers sf ON j.job_id = sf.job_id
+      LEFT JOIN users u ON sf.user_id = u.user_id
+      LEFT JOIN agreements a ON j.job_id = a.job_id AND sf.user_id = a.user_id
+      WHERE j.job_id = $1 AND j.company_id = $2
+    `;
+    
+    const result = await db.query(query, [jobId, companyId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+    
+    res.json({ job: result.rows[0] });
+  } catch (error) {
+    console.error("Get Job Completion Status Error:", error);
+    res.status(500).json({ error: "Failed to fetch job completion status" });
+  }
+};
+
+
 
 exports.selectFreelancer = async (req, res) => {
   const { jobId, userId } = req.params;
