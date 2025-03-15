@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { CalendarDays, Briefcase, Users, Clock, AlertCircle, Plus, Eye, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CalendarDays, Briefcase, Users, Clock, AlertCircle, Plus, Eye, Edit, Trash2} from 'lucide-react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const CompanyJobs = () => {
@@ -23,6 +23,7 @@ const CompanyJobs = () => {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
+        console.log(data)
         setJobs(data.jobs || []);
       } catch (err) {
         console.error('Error fetching company jobs:', err);
@@ -42,7 +43,7 @@ const CompanyJobs = () => {
   };
 
   const handleCreateJob = () => {
-    window.location.href = "/create-job";
+    window.location.href = "/company/createjob";
   };
 
   const filteredJobs = activeFilter === 'all' 

@@ -81,10 +81,3 @@ Check the status of in-progress or completed jobs
 
 
 
-
-
-
-For Job Details view Details --company side
-Pending code from claude --- anish.rane@ves.ac.in
-
-https://claude.ai/chat/34a51698-c488-4e2b-8c7a-3d78a9a69746
