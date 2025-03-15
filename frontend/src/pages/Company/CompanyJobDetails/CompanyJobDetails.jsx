@@ -46,6 +46,7 @@ const JobDetails = () => {
         );
 
         const data = await response.json();
+        console.log("Job details data", data);
         setJobDetails(data);
         setLoading(false);
       } catch (err) {
@@ -498,10 +499,11 @@ const JobDetails = () => {
                                 job.company_id.toString() === userId &&
                                 !selectedFreelancer && (
                                   <button
+                                    // Replace the existing onClick handler for the "Select Freelancer" button with this:
                                     onClick={async () => {
                                       try {
                                         const response = await fetch(
-                                          `http://localhost:5000/freelancers/select`,
+                                          `http://localhost:5000/quotes/accept/${quote.quote_id}`,
                                           {
                                             method: "POST",
                                             headers: {
@@ -510,16 +512,17 @@ const JobDetails = () => {
                                             },
                                             credentials: "include",
                                             body: JSON.stringify({
-                                              jobId: job_id,
-                                              freelancerId: quote.user_id,
-                                              quoteId: quote.quote_id,
+                                              companyId: job.company_id,
                                             }),
                                           }
                                         );
 
                                         if (!response.ok) {
+                                          const errorData =
+                                            await response.json();
                                           throw new Error(
-                                            "Failed to select freelancer"
+                                            errorData.error ||
+                                              "Failed to select freelancer"
                                           );
                                         }
 

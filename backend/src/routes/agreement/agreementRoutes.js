@@ -17,4 +17,26 @@ router.post('/:agreementId/respond',
   agreementController.respondToAgreement
 );
 
+
+// ------------------------------------------------------------------------------------------------------
+
+// Agreement routes (for both company and freelancer)
+router.get('/:agreementId', 
+  authMiddleware.authenticate, 
+  agreementController.getAgreement
+);
+
+// Freelancer routes
+router.post('/:agreementId/accept', 
+  authMiddleware.authenticate, 
+  authMiddleware.isFreelancer, 
+  agreementController.acceptAgreement
+);
+
+router.post('/:agreementId/reject', 
+  authMiddleware.authenticate, 
+  authMiddleware.isFreelancer, 
+  agreementController.rejectAgreement
+);
+
 module.exports = router;
