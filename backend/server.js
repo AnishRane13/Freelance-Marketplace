@@ -17,6 +17,7 @@ const postRoutes = require("./src/routes/posts/postRoutes");
 const subscriptionRoutes = require("./src/routes/subscriptions/subscriptionRoutes");
 const jobsRoutes = require("./src/routes/jobs/jobRoutes");
 const quoteRoutes = require("./src/routes/quotes/quoteRoutes");
+const agreementRoutes = require("./src/routes/agreement/agreementRoutes")
 // Initialize Express App
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -58,6 +59,7 @@ app.use("/posts", postRoutes);
 app.use("/subscription", subscriptionRoutes);
 app.use("/jobs", jobsRoutes);
 app.use("/quotes", quoteRoutes);
+app.use("/agreements", agreementRoutes);
 
 // Start Server
 httpServer.listen(PORT, () => {

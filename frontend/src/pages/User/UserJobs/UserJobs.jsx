@@ -1,9 +1,11 @@
 import { useState } from "react";
-import UserJobsComponent from "../../../components/User/UserJobs/UserJobsComponent";
-import UserAgreements from "../../../components/User/UserJobs/UserAgreements";
+import { useParams } from "react-router-dom";
+import UserJobsContent from "../../../components/User/UserJobs/UserJobsContent";
+import UserAgreementsContent from "../../../components/User/UserJobs/UserAgreementsContent";
 
 const UserJobs = () => {
   const [view, setView] = useState("jobs"); // Toggle between 'jobs' and 'agreements'
+  const { user_id } = useParams();
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen">
@@ -14,7 +16,7 @@ const UserJobs = () => {
               {view === "jobs" ? "Available Jobs" : "User Agreements"}
             </h1>
             <button
-              className="bg-white text-blue-600 font-semibold px-4 py-2 rounded-md shadow-md hover:bg-blue-100"
+              className="bg-white text-blue-600 font-semibold px-4 py-2 rounded-md shadow-md hover:bg-blue-100 transition-all"
               onClick={() => setView(view === "jobs" ? "agreements" : "jobs")}
             >
               {view === "jobs" ? "View Agreements" : "View Jobs"}
@@ -22,7 +24,11 @@ const UserJobs = () => {
           </div>
         </div>
 
-        {view === "jobs" ? <UserJobsComponent /> : <UserAgreements />}
+        {view === "jobs" ? (
+          <UserJobsContent user_id={user_id} />
+        ) : (
+          <UserAgreementsContent user_id={user_id} />
+        )}
       </div>
     </div>
   );

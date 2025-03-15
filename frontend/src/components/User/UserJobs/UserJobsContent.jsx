@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import JobCard from "./JobCard";
 import CategoryFilter from "./CategoryFilter";
 import LoadingSpinner from "../../LoadingSpinner";
@@ -7,21 +6,19 @@ import EmptyState from "./EmptyState";
 import { NotificationsContainer } from "../../Notification";
 import { motion } from "framer-motion";
 
-const UserJobsComponent = () => {
+const UserJobsContent = ({ user_id }) => {
   const [jobs, setJobs] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user_id } = useParams();
-  const id = user_id;
 
   // Fetch categories for the filter dropdown
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/categories/${id}`);
+        const response = await fetch(`http://localhost:5000/categories/${user_id}`);
         const data = await response.json();
 
         if (data.success) {
@@ -39,18 +36,16 @@ const UserJobsComponent = () => {
     };
 
     fetchCategories();
-  }, [id]);
+  }, [user_id]);
 
   // Fetch jobs based on selected category
   useEffect(() => {
     const fetchJobs = async () => {
       setLoading(true);
       try {
-        let url = `http://localhost:5000/jobs/user/${user_id}/${selectedCategory}`;
-
-        if (selectedCategory === "all") {
-          url = `http://localhost:5000/jobs/user/${user_id}/all`;
-        }
+        const url = selectedCategory === "all" 
+          ? `http://localhost:5000/jobs/user/${user_id}/all`
+          : `http://localhost:5000/jobs/user/${user_id}/${selectedCategory}`;
 
         const response = await fetch(url);
         const data = await response.json();
@@ -110,64 +105,54 @@ const UserJobsComponent = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-white min-h-screen">
+    <>
       <NotificationsContainer
         notifications={notifications}
         removeNotification={removeNotification}
       />
 
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {/* Header with glass effect */}
-        <div className="bg-white bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl shadow-lg mb-8 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-500 py-8 px-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h1 className="text-3xl font-bold text-white tracking-tight">
-                Available Jobs
-              </h1>
-              <CategoryFilter
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onChange={handleCategoryChange}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Main content area */}
-        <div className="p-1">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <LoadingSpinner />
-            </div>
-          ) : error ? (
-            <div className="bg-red-50 text-red-600 p-6 rounded-xl text-center font-medium shadow-sm">
-              {error}
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="bg-white bg-opacity-70 rounded-xl shadow-md p-6">
-              <EmptyState />
-            </div>
-          ) : (
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {jobs.map((job) => (
-                <motion.div key={job.job_id} variants={itemVariants}>
-                  <JobCard
-                    job={job}
-                    addNotification={addNotification}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </div>
+      <div className="mb-6">
+        <CategoryFilter
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onChange={handleCategoryChange}
+        />
       </div>
-    </div>
+
+      {/* Main content area */}
+      <div>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <LoadingSpinner />
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 text-red-600 p-6 rounded-xl text-center font-medium shadow-sm">
+            {error}
+          </div>
+        ) : jobs.length === 0 ? (
+          <div className="bg-white bg-opacity-70 rounded-xl shadow-md p-6">
+            <EmptyState />
+          </div>
+        ) : (
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {jobs.map((job) => (
+              <motion.div key={job.job_id} variants={itemVariants}>
+                <JobCard
+                  job={job}
+                  addNotification={addNotification}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+    </>
   );
 };
 
-export default UserJobsComponent;
+export default UserJobsContent;

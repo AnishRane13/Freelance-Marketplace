@@ -1,6 +1,6 @@
 // src/controllers/agreementController.js
-const db = require('../config/database');
-const { sendNotification } = require('../utils/notificationHelper');
+const db = require('../../../db/db');
+const { sendNotification } = require('../../utils/notificationHelper');
 
 exports.getAgreement = async (req, res) => {
   const { agreementId } = req.params;
@@ -340,7 +340,6 @@ exports.rejectAgreement = async (req, res) => {
 };
 
 
-
 exports.getPendingAgreements = async (req, res) => {
   const userId = req.user.user_id;
   
@@ -380,13 +379,22 @@ exports.getPendingAgreements = async (req, res) => {
 };
 
 exports.getAllAgreements = async (req, res) => {
-  const userId = req.user.user_id;
-  const userType = req.user.user_type;
-  let query;
-  
+  const { user_id } = req.params; 
+
   try {
+    // Fetch user type
+    const userQuery = `SELECT user_type FROM users WHERE user_id = $1`;
+    const userResult = await db.query(userQuery, [user_id]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userType = userResult.rows[0].user_type;
+    let query, params;
+
     if (userType === 'user') {
-      // For freelancers - get agreements where they are the user
+      // Freelancer agreements
       query = `
         SELECT 
           a.agreement_id,
@@ -395,13 +403,13 @@ exports.getAllAgreements = async (req, res) => {
           a.status,
           a.created_at,
           a.response_at,
-          j.title as job_title,
-          j.description as job_description,
+          j.title AS job_title,
+          j.description AS job_description,
           j.deadline,
-          j.status as job_status,
+          j.status AS job_status,
           q.quote_price,
-          c.name as company_name,
-          c.profile_picture as company_profile_picture
+          c.name AS company_name,
+          c.profile_picture AS company_profile_picture
         FROM agreements a
         JOIN jobs j ON a.job_id = j.job_id
         JOIN quotes q ON (q.job_id = j.job_id AND q.user_id = a.user_id)
@@ -410,32 +418,33 @@ exports.getAllAgreements = async (req, res) => {
         WHERE a.user_id = $1
         ORDER BY a.created_at DESC
       `;
+      params = [user_id];
     } else {
-      // For companies - get agreements where their company is involved
+      // Company agreements
       const companyQuery = `SELECT company_id FROM companies WHERE user_id = $1`;
-      const companyResult = await db.query(companyQuery, [userId]);
-      
+      const companyResult = await db.query(companyQuery, [user_id]);
+
       if (companyResult.rows.length === 0) {
         return res.status(400).json({ error: 'Company profile not found' });
       }
-      
+
       const companyId = companyResult.rows[0].company_id;
-      
+
       query = `
         SELECT 
           a.agreement_id,
           a.job_id,
-          a.user_id as freelancer_id,
+          a.user_id AS freelancer_id,
           a.status,
           a.created_at,
           a.response_at,
-          j.title as job_title,
-          j.description as job_description,
+          j.title AS job_title,
+          j.description AS job_description,
           j.deadline,
-          j.status as job_status,
+          j.status AS job_status,
           q.quote_price,
-          u.name as freelancer_name,
-          u.profile_picture as freelancer_profile_picture
+          u.name AS freelancer_name,
+          u.profile_picture AS freelancer_profile_picture
         FROM agreements a
         JOIN jobs j ON a.job_id = j.job_id
         JOIN quotes q ON (q.job_id = j.job_id AND q.user_id = a.user_id)
@@ -443,16 +452,19 @@ exports.getAllAgreements = async (req, res) => {
         WHERE a.company_id = $1
         ORDER BY a.created_at DESC
       `;
+      params = [companyId];
     }
-    
-    const result = await db.query(query, [userType === 'user' ? userId : companyId]);
-    
+
+    // Execute query
+    const result = await db.query(query, params);
+
     res.status(200).json({
       count: result.rows.length,
-      agreements: result.rows
+      agreements: result.rows,
     });
   } catch (error) {
     console.error('Get All Agreements Error:', error);
     res.status(500).json({ error: 'Failed to fetch agreements' });
   }
 };
+
