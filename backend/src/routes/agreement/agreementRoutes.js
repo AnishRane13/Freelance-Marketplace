@@ -4,11 +4,9 @@ const router = express.Router();
 const agreementController = require('../../controllers/agreements/agreementController');
 // const authMiddleware = require('../../middlewares/authMiddleware');
 
-// // Get agreement details
-// router.get('/:agreementId', 
-//   authMiddleware.isAuthenticated,
-//   agreementController.getAgreement
-// );
+// Get agreement details
+router.post('/:agreementId', agreementController.getAgreement);
+
 
 // // Respond to agreement (accept/reject)
 // router.post('/:agreementId/respond', 
@@ -26,18 +24,14 @@ const agreementController = require('../../controllers/agreements/agreementContr
 //   agreementController.getAgreement
 // );
 
-// // Freelancer routes
-// router.post('/:agreementId/accept', 
-//   authMiddleware.authenticate, 
-//   authMiddleware.isFreelancer, 
-//   agreementController.acceptAgreement
-// );
+// Freelancer routes
+router.post('/:agreementId/accept', 
+  agreementController.acceptAgreement
+);
 
-// router.post('/:agreementId/reject', 
-//   authMiddleware.authenticate, 
-//   authMiddleware.isFreelancer, 
-//   agreementController.rejectAgreement
-// );
+router.post('/:agreementId/reject', 
+  agreementController.rejectAgreement
+);
 
 router.get('/getAllAgreements/:user_id', agreementController.getAllAgreements);
 

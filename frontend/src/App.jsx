@@ -6,12 +6,14 @@ import SignUp from "./pages/SignUp/SignUp.jsx";
 import UserLayout from "./components/User/UserLayout.jsx";
 import CompanyLayout from "./components/Company/CompanyLayout.jsx";
 import UserDashboard from "./pages/User/UserDashboard/UserDashboard.jsx";
+import UserProfile from "./pages/User/UserProfile/UserProfile.jsx";
+import UserAgreementDetails from "./pages/User/UserAgreementDetails/UserAgreementDetailsPage.jsx";
 import CompanyDashboard from "./pages/Company/CompanyDashboard/CompanyDashboard.jsx";
 import CompanyProfile from "./pages/Company/CompanyProfile/CompanyProfile.jsx";
 import CompanyJobs from "./pages/Company/CompanyJobs/CompanyJobs.jsx";
 import CompanyJobDetails from "./pages/Company/CompanyJobDetails/CompanyJobDetails.jsx";
-import UserProfile from "./pages/User/UserProfile/UserProfile.jsx";
 import UserJobs from "./pages/User/UserJobs/UserJobs.jsx";
+// im[]
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import CompanyCreateJob from "./pages/Company/CompanyCreateJob/CompanyCreateJob.jsx";
@@ -53,6 +55,7 @@ function App() {
             <Route path="/user/dashboard" element={<UserDashboard />} />
             <Route path="/user/profile/:user_id" element={<UserProfile />} />
             <Route path="/user/jobs/:user_id" element={<UserJobs />} />
+            <Route path="/user/agreements/:agreementId" element={<UserAgreementDetails />} />
             {/* <Route path="/user/settings" element={<UserSettings />} /> */}
           </Route>
 

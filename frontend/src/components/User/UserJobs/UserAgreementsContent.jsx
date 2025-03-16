@@ -13,7 +13,7 @@ const UserAgreementsContent = ({ user_id }) => {
     const fetchAgreements = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:5000/getAllAgreements/${user_id}`);
+        const response = await fetch(`http://localhost:5000/agreements/getAllAgreements/${user_id}`);
         const data = await response.json();
 
         if (response.ok) {
@@ -38,7 +38,7 @@ const UserAgreementsContent = ({ user_id }) => {
 
   // Handle navigation to agreement details
   const handleViewDetails = (agreementId) => {
-    navigate(`/agreements/${agreementId}`);
+    navigate(`/user/agreements/${agreementId}`);
   };
 
   // Format date to a readable string

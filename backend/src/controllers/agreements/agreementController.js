@@ -4,8 +4,7 @@ const { sendNotification } = require('../../utils/notificationHelper');
 
 exports.getAgreement = async (req, res) => {
   const { agreementId } = req.params;
-  const userId = req.user.user_id;
-  
+  const { userId } = req.body; 
   try {
     const query = `
       SELECT a.*, j.title as job_title, j.description as job_description,
@@ -171,40 +170,40 @@ exports.respondToAgreement = async (req, res) => {
 
 
 // src/controllers/agreementController.js
-exports.getAgreement = async (req, res) => {
-  const { agreementId } = req.params;
-  const userId = req.user.user_id;
+// exports.getAgreement = async (req, res) => {
+//   const { agreementId } = req.params;
+//   const userId = req.user.user_id;
   
-  try {
-    const query = `
-      SELECT a.*, j.title as job_title, j.description as job_description,
-        j.deadline, j.price,
-        u.name as user_name, u.email as user_email,
-        c.name as company_name
-      FROM agreements a
-      JOIN jobs j ON a.job_id = j.job_id
-      JOIN users u ON a.user_id = u.user_id
-      JOIN companies comp ON a.company_id = comp.company_id
-      JOIN users c ON comp.user_id = c.user_id
-      WHERE a.agreement_id = $1 AND (a.user_id = $2 OR c.user_id = $2)
-    `;
+//   try {
+//     const query = `
+//       SELECT a.*, j.title as job_title, j.description as job_description,
+//         j.deadline, j.price,
+//         u.name as user_name, u.email as user_email,
+//         c.name as company_name
+//       FROM agreements a
+//       JOIN jobs j ON a.job_id = j.job_id
+//       JOIN users u ON a.user_id = u.user_id
+//       JOIN companies comp ON a.company_id = comp.company_id
+//       JOIN users c ON comp.user_id = c.user_id
+//       WHERE a.agreement_id = $1 AND (a.user_id = $2 OR c.user_id = $2)
+//     `;
     
-    const result = await db.query(query, [agreementId, userId]);
+//     const result = await db.query(query, [agreementId, userId]);
     
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Agreement not found' });
-    }
+//     if (result.rows.length === 0) {
+//       return res.status(404).json({ error: 'Agreement not found' });
+//     }
     
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Get Agreement Error:', error);
-    res.status(500).json({ error: 'Failed to fetch agreement' });
-  }
-};
+//     res.json(result.rows[0]);
+//   } catch (error) {
+//     console.error('Get Agreement Error:', error);
+//     res.status(500).json({ error: 'Failed to fetch agreement' });
+//   }
+// };
 
 exports.acceptAgreement = async (req, res) => {
   const { agreementId } = req.params;
-  const userId = req.user.user_id;
+  const { userId } = req.body; 
   
   try {
     // Start transaction
@@ -270,7 +269,7 @@ exports.acceptAgreement = async (req, res) => {
 
 exports.rejectAgreement = async (req, res) => {
   const { agreementId } = req.params;
-  const userId = req.user.user_id;
+  const { userId } = req.body; 
   
   try {
     // Start transaction
