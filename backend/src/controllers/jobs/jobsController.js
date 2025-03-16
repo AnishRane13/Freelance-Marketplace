@@ -640,8 +640,9 @@ exports.createJobCompletionPayment = async (req, res) => {
   
   try {
     // Verify job belongs to this company and is in progress
+    // Also get the quote price from the selected freelancer's quote
     const jobQuery = `
-      SELECT j.*, sf.user_id as freelancer_id, q.quote_price 
+      SELECT j.*, j.title, sf.user_id as freelancer_id, q.quote_price 
       FROM jobs j
       JOIN selected_freelancers sf ON j.job_id = sf.job_id
       JOIN quotes q ON j.job_id = q.job_id AND sf.user_id = q.user_id
@@ -703,7 +704,6 @@ exports.createJobCompletionPayment = async (req, res) => {
   }
 };
 
-
 exports.processJobCompletionPayment = async (req, res) => {
   const { 
     paymentIntentId, 
@@ -742,10 +742,12 @@ exports.processJobCompletionPayment = async (req, res) => {
     const paymentTracking = trackingResult.rows[0];
     
     // Verify job exists and belongs to this company
+    // Also get the quote price to double-check
     const jobQuery = `
-      SELECT j.*, sf.user_id as freelancer_id
+      SELECT j.*, sf.user_id as freelancer_id, q.quote_price
       FROM jobs j
       JOIN selected_freelancers sf ON j.job_id = sf.job_id
+      JOIN quotes q ON j.job_id = q.job_id AND sf.user_id = q.user_id
       WHERE j.job_id = $1 AND j.company_id = $2 AND j.status = 'in_progress'
     `;
     
@@ -757,6 +759,12 @@ exports.processJobCompletionPayment = async (req, res) => {
     }
     
     const job = jobResult.rows[0];
+    
+    // Verify the amount matches the quote price
+    if (paymentTracking.amount !== job.quote_price) {
+      await db.query('ROLLBACK');
+      return res.status(400).json({ error: 'Payment amount does not match the agreed quote price' });
+    }
     
     try {
       // Update job status
@@ -777,7 +785,7 @@ exports.processJobCompletionPayment = async (req, res) => {
       `;
       
       const paymentResult = await db.query(paymentQuery, [
-        jobId, company_id, paymentTracking.amount
+        jobId, company_id, job.quote_price
       ]);
       
       // Create job completion record
@@ -792,7 +800,7 @@ exports.processJobCompletionPayment = async (req, res) => {
         jobId, 
         job.freelancer_id, 
         company_id, 
-        paymentTracking.amount
+        job.quote_price
       ]);
       
       // Update payment tracking record
@@ -806,7 +814,7 @@ exports.processJobCompletionPayment = async (req, res) => {
         job.freelancer_id, 
         jobId, 
         'payment', 
-        `Payment for job "${job.title}" has been completed. Amount: ${paymentTracking.amount}`
+        `Payment for job "${job.title}" has been completed. Amount: ${job.quote_price}`
       );
       
       // Commit transaction
