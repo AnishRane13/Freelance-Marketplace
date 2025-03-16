@@ -788,11 +788,11 @@ exports.processJobCompletionPayment = async (req, res) => {
         jobId, company_id, job.quote_price
       ]);
       
-      // Create job completion record
+      // Create job completion record with properly set completed_at field
       const completionQuery = `
         INSERT INTO job_completion 
-        (job_id, user_id, company_id, amount_paid, status)
-        VALUES ($1, $2, $3, $4, 'completed')
+        (job_id, user_id, company_id, amount_paid, status, completed_at)
+        VALUES ($1, $2, $3, $4, 'completed', CURRENT_TIMESTAMP)
         RETURNING *
       `;
       
