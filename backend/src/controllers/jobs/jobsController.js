@@ -632,3 +632,208 @@ exports.markJobComplete = async (req, res) => {
     res.status(500).json({ error: 'Failed to mark job as complete' });
   }
 };
+
+
+exports.createJobCompletionPayment = async (req, res) => {
+  const { jobId } = req.params;
+  const company_id = req.user.company_id;
+  
+  try {
+    // Verify job belongs to this company and is in progress
+    const jobQuery = `
+      SELECT j.*, sf.user_id as freelancer_id, q.quote_price 
+      FROM jobs j
+      JOIN selected_freelancers sf ON j.job_id = sf.job_id
+      JOIN quotes q ON j.job_id = q.job_id AND sf.user_id = q.user_id
+      WHERE j.job_id = $1 AND j.company_id = $2 AND j.status = 'in_progress'
+    `;
+    
+    const jobResult = await db.query(jobQuery, [jobId, company_id]);
+    
+    if (jobResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Job not found or not in progress' });
+    }
+    
+    const job = jobResult.rows[0];
+    
+    // Check if agreement is accepted
+    const agreementQuery = `
+      SELECT * FROM agreements
+      WHERE job_id = $1 AND user_id = $2 AND status = 'accepted'
+    `;
+    
+    const agreementResult = await db.query(agreementQuery, [jobId, job.freelancer_id]);
+    
+    if (agreementResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Agreement not yet accepted by freelancer' });
+    }
+    
+    // Create unique payment ID to track this transaction
+    const paymentIntentId = crypto.randomUUID();
+    
+    // Store payment intent in database
+    const paymentIntentQuery = `
+      INSERT INTO payment_tracking 
+      (tracking_id, paypal_payment_id, company_id, plan_type, amount, job_limit, status, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      RETURNING tracking_id
+    `;
+    
+    await db.query(paymentIntentQuery, [
+      paymentIntentId,
+      'JOB_PAYMENT_' + paymentIntentId.substring(0, 8),
+      company_id,
+      'job_completion',
+      job.quote_price,
+      1, // Not relevant for job payments, but required by schema
+      'pending'
+    ]);
+
+    // Return payment details to frontend
+    res.json({
+      paymentIntentId: paymentIntentId,
+      jobId: jobId,
+      amount: job.quote_price,
+      description: `Payment for job: ${job.title}`,
+      redirectUrl: `${process.env.FRONTEND_URL}/payment/job-checkout?intent_id=${paymentIntentId}&job_id=${jobId}`
+    });
+  } catch (error) {
+    console.error('Job Payment Intent Creation Error:', error);
+    res.status(500).json({ error: 'Failed to create payment intent' });
+  }
+};
+
+
+exports.processJobCompletionPayment = async (req, res) => {
+  const { 
+    paymentIntentId, 
+    jobId,
+    cardNumber, 
+    expiryMonth, 
+    expiryYear, 
+    cvc, 
+    cardholderName 
+  } = req.body;
+  
+  const company_id = req.user.company_id;
+  
+  // Basic validation
+  if (!paymentIntentId || !jobId || !cardNumber || !expiryMonth || !expiryYear || !cvc || !cardholderName) {
+    return res.status(400).json({ error: 'Missing payment information' });
+  }
+
+  try {
+    // Start transaction
+    await db.query('BEGIN');
+    
+    // Get payment tracking info
+    const trackingQuery = `
+      SELECT * FROM payment_tracking 
+      WHERE tracking_id = $1 AND company_id = $2 AND status = 'pending'
+    `;
+    
+    const trackingResult = await db.query(trackingQuery, [paymentIntentId, company_id]);
+    
+    if (trackingResult.rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'Payment intent not found or already processed' });
+    }
+    
+    const paymentTracking = trackingResult.rows[0];
+    
+    // Verify job exists and belongs to this company
+    const jobQuery = `
+      SELECT j.*, sf.user_id as freelancer_id
+      FROM jobs j
+      JOIN selected_freelancers sf ON j.job_id = sf.job_id
+      WHERE j.job_id = $1 AND j.company_id = $2 AND j.status = 'in_progress'
+    `;
+    
+    const jobResult = await db.query(jobQuery, [jobId, company_id]);
+    
+    if (jobResult.rows.length === 0) {
+      await db.query('ROLLBACK');
+      return res.status(404).json({ error: 'Job not found or not in progress' });
+    }
+    
+    const job = jobResult.rows[0];
+    
+    try {
+      // Update job status
+      const updateJobQuery = `
+        UPDATE jobs 
+        SET status = 'completed' 
+        WHERE job_id = $1
+        RETURNING *
+      `;
+      
+      const updatedJob = await db.query(updateJobQuery, [jobId]);
+      
+      // Create payment entry
+      const paymentQuery = `
+        INSERT INTO payments (job_id, company_id, amount, payment_status)
+        VALUES ($1, $2, $3, 'completed')
+        RETURNING *
+      `;
+      
+      const paymentResult = await db.query(paymentQuery, [
+        jobId, company_id, paymentTracking.amount
+      ]);
+      
+      // Create job completion record
+      const completionQuery = `
+        INSERT INTO job_completion 
+        (job_id, user_id, company_id, amount_paid, status)
+        VALUES ($1, $2, $3, $4, 'completed')
+        RETURNING *
+      `;
+      
+      const completionResult = await db.query(completionQuery, [
+        jobId, 
+        job.freelancer_id, 
+        company_id, 
+        paymentTracking.amount
+      ]);
+      
+      // Update payment tracking record
+      await db.query(
+        'UPDATE payment_tracking SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE tracking_id = $2',
+        ['completed', paymentIntentId]
+      );
+      
+      // Send notifications
+      await sendNotification(
+        job.freelancer_id, 
+        jobId, 
+        'payment', 
+        `Payment for job "${job.title}" has been completed. Amount: ${paymentTracking.amount}`
+      );
+      
+      // Commit transaction
+      await db.query('COMMIT');
+
+      res.json({ 
+        success: true,
+        message: 'Payment processed and job completed successfully', 
+        job: updatedJob.rows[0],
+        payment: paymentResult.rows[0],
+        redirectUrl: `${process.env.FRONTEND_URL}/jobs/completed?job_id=${jobId}`
+      });
+    } catch (dbError) {
+      // Rollback transaction on error
+      await db.query('ROLLBACK');
+      console.error('Database Job Completion Error:', dbError);
+      res.status(500).json({ 
+        error: 'Failed to complete job payment',
+        redirectUrl: `${process.env.FRONTEND_URL}/payment/failure`
+      });
+    }
+  } catch (error) {
+    await db.query('ROLLBACK');
+    console.error('Job Payment Processing Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process payment',
+      redirectUrl: `${process.env.FRONTEND_URL}/payment/failure`
+    });
+  }
+};
