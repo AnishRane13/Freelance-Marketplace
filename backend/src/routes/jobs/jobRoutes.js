@@ -55,4 +55,11 @@ router.post('/:jobId/payment', paymentController.processJobPayment);
 // Capture job payment (company only)
 router.post('/payment/capture', paymentController.captureJobPayment);
 
+// Create a job completion payment intent (company only)
+router.post('/:jobId/completion-payment', jobController.createJobCompletionPayment);
+
+// Process the job completion payment (company only)
+router.post('/completion-payment/process', jobController.processJobCompletionPayment);
+
+
 module.exports = router;

@@ -636,11 +636,14 @@ exports.markJobComplete = async (req, res) => {
 
 exports.createJobCompletionPayment = async (req, res) => {
   const { jobId } = req.params;
-  const company_id = req.user.company_id;
+  const { company_id } = req.body;
+  
+  if (!company_id) {
+    return res.status(400).json({ error: 'Company ID is required' });
+  }
   
   try {
     // Verify job belongs to this company and is in progress
-    // Also get the quote price from the selected freelancer's quote
     const jobQuery = `
       SELECT j.*, j.title, sf.user_id as freelancer_id, q.quote_price 
       FROM jobs j
@@ -692,8 +695,8 @@ exports.createJobCompletionPayment = async (req, res) => {
 
     // Return payment details to frontend
     res.json({
-      paymentIntentId: paymentIntentId,
-      jobId: jobId,
+      paymentIntentId,
+      jobId,
       amount: job.quote_price,
       description: `Payment for job: ${job.title}`,
       redirectUrl: `${process.env.FRONTEND_URL}/payment/job-checkout?intent_id=${paymentIntentId}&job_id=${jobId}`
@@ -712,13 +715,12 @@ exports.processJobCompletionPayment = async (req, res) => {
     expiryMonth, 
     expiryYear, 
     cvc, 
-    cardholderName 
+    cardholderName,
+    company_id
   } = req.body;
   
-  const company_id = req.user.company_id;
-  
   // Basic validation
-  if (!paymentIntentId || !jobId || !cardNumber || !expiryMonth || !expiryYear || !cvc || !cardholderName) {
+  if (!paymentIntentId || !jobId || !cardNumber || !expiryMonth || !expiryYear || !cvc || !cardholderName || !company_id) {
     return res.status(400).json({ error: 'Missing payment information' });
   }
 
