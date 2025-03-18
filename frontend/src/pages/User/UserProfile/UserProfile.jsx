@@ -6,7 +6,6 @@ import ProfileHeader from "../../../components/User/UserProfile/ProfileHeader";
 import ProfileInfo from "../../../components/User/UserProfile/ProfileInfo";
 import UserPosts from "../../../components/User/UserProfile/UserPosts";
 import { NotificationsContainer } from "../../../components/Notification";
-import CreatePost from "../../../components/CreatePost";
 import Loader from "../../../components/Loader";
 
 const UserProfile = () => {
@@ -16,7 +15,6 @@ const UserProfile = () => {
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState({});
   const [tempData, setTempData] = useState({});
-  const [showCreatePost, setShowCreatePost] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const fileInputRef = React.useRef(null);
 
@@ -31,6 +29,7 @@ const UserProfile = () => {
         });
 
         const data = await response.json();
+        console.log(data)
         if (data.success) {
           setUserData(data.user);
           setTempData(data.user);
@@ -181,13 +180,7 @@ const UserProfile = () => {
         userData={userData} 
         triggerFileInput={triggerFileInput}
       >
-        <button
-          onClick={() => setShowCreatePost(true)}
-          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-md text-sm sm:text-base"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden xs:inline">Create Post</span>
-        </button>
+    
       </ProfileHeader>
 
       {/* Profile Info Section */}
@@ -216,9 +209,7 @@ const UserProfile = () => {
         removeNotification={removeNotification} 
       />
 
-      {showCreatePost && (
-        <CreatePost userId={user_id} onClose={() => setShowCreatePost(false)} />
-      )}
+     
     </div>
   );
 };

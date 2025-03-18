@@ -188,6 +188,19 @@ CREATE TABLE agreements (
     response_at TIMESTAMP -- When the user responded
 );
 
+-- Create payment_tracking_meta table to link payment intents to specific jobs
+CREATE TABLE payment_tracking_meta (
+    id SERIAL PRIMARY KEY,
+    tracking_id VARCHAR(36) REFERENCES payment_tracking(tracking_id) ON DELETE CASCADE,
+    meta_key VARCHAR(50) NOT NULL,
+    meta_value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (tracking_id, meta_key)
+);
+
+-- Create index for faster lookups
+CREATE INDEX idx_payment_tracking_meta_key_value ON payment_tracking_meta(meta_key, meta_value);
+
 
 -- TRIGGER TO UPDATE USER EARNINGS WHEN JOB IS COMPLETED
 CREATE OR REPLACE FUNCTION update_user_earnings()

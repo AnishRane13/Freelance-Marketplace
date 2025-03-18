@@ -12,6 +12,7 @@ const getUserById = async (userId) => {
             u.cover_photo,
             u.bio,
             u.categories,
+            u.total_earnings,
             u.created_at,
             c.website,
             c.location,

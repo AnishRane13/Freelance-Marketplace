@@ -9,6 +9,7 @@ import {
   Link,
   Mail,
   Phone,
+  DollarSign,
 } from "lucide-react";
 
 const ProfileInfo = ({
@@ -52,12 +53,21 @@ const ProfileInfo = ({
 
             {/* Stats Card (Mobile-Only) */}
             <div className="mt-5 bg-blue-50 rounded-lg p-4 w-full sm:hidden">
-              <div className="flex justify-center text-center">
-                <div className="text-center">
+              <div className="flex justify-around text-center">
+                {/* <div className="text-center">
                   <div className="text-4xl font-bold text-blue-600">35</div>
                   <div className="flex items-center justify-center text-blue-500 text-sm mt-1">
                     <Briefcase className="w-3.5 h-3.5 mr-1" />
                     <span>Completed Jobs</span>
+                  </div>
+                </div> */}
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-green-600">
+                    ${userData.total_earnings || 0}
+                  </div>
+                  <div className="flex items-center justify-center text-green-500 text-sm mt-1">
+                    <DollarSign className="w-3.5 h-3.5 mr-1" />
+                    <span>Total Earnings</span>
                   </div>
                 </div>
               </div>
@@ -112,11 +122,20 @@ const ProfileInfo = ({
 
               {/* Stats (Desktop) */}
               <div className="hidden sm:flex items-center">
-                <div className="ml-4 pl-4 border-l border-blue-100">
+                {/* <div className="ml-4 pl-4 border-l border-blue-100">
                   <div className="text-4xl font-bold text-blue-600">35</div>
                   <div className="flex items-center text-blue-500 text-sm font-medium">
                     <Briefcase className="w-3.5 h-3.5 mr-1" />
                     <span>Completed Jobs</span>
+                  </div>
+                </div> */}
+                <div className="ml-4 pl-4 border-l border-blue-100">
+                  <div className="text-4xl font-bold text-green-600">
+                    ${userData.total_earnings || 0}
+                  </div>
+                  <div className="flex items-center text-green-500 text-sm font-medium">
+                    <DollarSign className="w-3.5 h-3.5 mr-1" />
+                    <span>Total Earnings</span>
                   </div>
                 </div>
               </div>

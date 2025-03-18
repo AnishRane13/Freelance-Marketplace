@@ -633,7 +633,6 @@ exports.markJobComplete = async (req, res) => {
   }
 };
 
-
 exports.createJobCompletionPayment = async (req, res) => {
   const { jobId } = req.params;
   const { company_id } = req.body;
@@ -643,6 +642,55 @@ exports.createJobCompletionPayment = async (req, res) => {
   }
   
   try {
+    // First check if there's already a pending payment intent for this job
+    const existingPaymentQuery = `
+      SELECT * FROM payment_tracking
+      WHERE company_id = $1 AND plan_type = 'job_completion' AND status = 'pending'
+      AND tracking_id IN (
+        SELECT tracking_id FROM payment_tracking_meta
+        WHERE meta_key = 'job_id' AND meta_value = $2
+      )
+    `;
+    
+    const existingPayment = await db.query(existingPaymentQuery, [company_id, jobId]);
+    
+    // If there's an existing pending payment intent, return that instead of creating a new one
+    if (existingPayment.rows.length > 0) {
+      const payment = existingPayment.rows[0];
+      
+      // Get the job details to ensure it's still valid
+      const jobQuery = `
+        SELECT j.*, j.title, sf.user_id as freelancer_id, q.quote_price 
+        FROM jobs j
+        JOIN selected_freelancers sf ON j.job_id = sf.job_id
+        JOIN quotes q ON j.job_id = q.job_id AND sf.user_id = q.user_id
+        WHERE j.job_id = $1 AND j.company_id = $2 AND j.status = 'in_progress'
+      `;
+      
+      const jobResult = await db.query(jobQuery, [jobId, company_id]);
+      
+      if (jobResult.rows.length === 0) {
+        // If job is no longer valid, mark the payment intent as failed
+        await db.query(
+          'UPDATE payment_tracking SET status = $1 WHERE tracking_id = $2',
+          ['failed', payment.tracking_id]
+        );
+        return res.status(404).json({ error: 'Job not found or not in progress' });
+      }
+      
+      const job = jobResult.rows[0];
+      
+      // Return the existing payment details
+      return res.json({
+        paymentIntentId: payment.tracking_id,
+        jobId,
+        amount: payment.amount,
+        description: `Payment for job: ${job.title}`,
+        redirectUrl: `${process.env.FRONTEND_URL}/payment/job-checkout?intent_id=${payment.tracking_id}&job_id=${jobId}`
+      });
+    }
+    
+    // If no existing payment intent, proceed with creating a new one
     // Verify job belongs to this company and is in progress
     const jobQuery = `
       SELECT j.*, j.title, sf.user_id as freelancer_id, q.quote_price 
@@ -672,35 +720,56 @@ exports.createJobCompletionPayment = async (req, res) => {
       return res.status(400).json({ error: 'Agreement not yet accepted by freelancer' });
     }
     
-    // Create unique payment ID to track this transaction
-    const paymentIntentId = crypto.randomUUID();
+    // Start transaction for data consistency
+    await db.query('BEGIN');
     
-    // Store payment intent in database
-    const paymentIntentQuery = `
-      INSERT INTO payment_tracking 
-      (tracking_id, paypal_payment_id, company_id, plan_type, amount, job_limit, status, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
-      RETURNING tracking_id
-    `;
-    
-    await db.query(paymentIntentQuery, [
-      paymentIntentId,
-      'JOB_PAYMENT_' + paymentIntentId.substring(0, 8),
-      company_id,
-      'job_completion',
-      job.quote_price,
-      1, // Not relevant for job payments, but required by schema
-      'pending'
-    ]);
+    try {
+      // Create unique payment ID to track this transaction
+      const paymentIntentId = crypto.randomUUID();
+      
+      // Store payment intent in database
+      const paymentIntentQuery = `
+        INSERT INTO payment_tracking 
+        (tracking_id, paypal_payment_id, company_id, plan_type, amount, job_limit, status, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+        RETURNING tracking_id
+      `;
+      
+      await db.query(paymentIntentQuery, [
+        paymentIntentId,
+        'JOB_PAYMENT_' + paymentIntentId.substring(0, 8),
+        company_id,
+        'job_completion',
+        job.quote_price,
+        1, // Not relevant for job payments, but required by schema
+        'pending'
+      ]);
+      
+      // Store job-specific metadata to link this payment to the job
+      const metaQuery = `
+        INSERT INTO payment_tracking_meta
+        (tracking_id, meta_key, meta_value)
+        VALUES ($1, $2, $3)
+      `;
+      
+      await db.query(metaQuery, [paymentIntentId, 'job_id', jobId]);
+      
+      // Commit the transaction
+      await db.query('COMMIT');
 
-    // Return payment details to frontend
-    res.json({
-      paymentIntentId,
-      jobId,
-      amount: job.quote_price,
-      description: `Payment for job: ${job.title}`,
-      redirectUrl: `${process.env.FRONTEND_URL}/payment/job-checkout?intent_id=${paymentIntentId}&job_id=${jobId}`
-    });
+      // Return payment details to frontend
+      res.json({
+        paymentIntentId,
+        jobId,
+        amount: job.quote_price,
+        description: `Payment for job: ${job.title}`,
+        redirectUrl: `${process.env.FRONTEND_URL}/payment/job-checkout?intent_id=${paymentIntentId}&job_id=${jobId}`
+      });
+    } catch (txError) {
+      // Rollback on error
+      await db.query('ROLLBACK');
+      throw txError;
+    }
   } catch (error) {
     console.error('Job Payment Intent Creation Error:', error);
     res.status(500).json({ error: 'Failed to create payment intent' });
@@ -728,13 +797,18 @@ exports.processJobCompletionPayment = async (req, res) => {
     // Start transaction
     await db.query('BEGIN');
     
-    // Get payment tracking info
+    // Get payment tracking info and verify it belongs to this job
     const trackingQuery = `
-      SELECT * FROM payment_tracking 
-      WHERE tracking_id = $1 AND company_id = $2 AND status = 'pending'
+      SELECT pt.* FROM payment_tracking pt
+      JOIN payment_tracking_meta ptm ON pt.tracking_id = ptm.tracking_id
+      WHERE pt.tracking_id = $1 
+      AND pt.company_id = $2 
+      AND pt.status = 'pending'
+      AND ptm.meta_key = 'job_id'
+      AND ptm.meta_value = $3
     `;
     
-    const trackingResult = await db.query(trackingQuery, [paymentIntentId, company_id]);
+    const trackingResult = await db.query(trackingQuery, [paymentIntentId, company_id, jobId]);
     
     if (trackingResult.rows.length === 0) {
       await db.query('ROLLBACK');
@@ -742,6 +816,31 @@ exports.processJobCompletionPayment = async (req, res) => {
     }
     
     const paymentTracking = trackingResult.rows[0];
+    
+    // Check if payment was already processed but transaction failed
+    const existingPaymentQuery = `
+      SELECT * FROM payments
+      WHERE job_id = $1 AND company_id = $2 AND payment_status = 'completed'
+    `;
+    
+    const existingPayment = await db.query(existingPaymentQuery, [jobId, company_id]);
+    
+    if (existingPayment.rows.length > 0) {
+      // Payment already exists, mark this intent as completed
+      await db.query(
+        'UPDATE payment_tracking SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE tracking_id = $2',
+        ['completed', paymentIntentId]
+      );
+      
+      await db.query('COMMIT');
+      
+      return res.json({ 
+        success: true,
+        message: 'Payment was already processed successfully',
+        payment: existingPayment.rows[0],
+        redirectUrl: `${process.env.FRONTEND_URL}/jobs/completed?job_id=${jobId}`
+      });
+    }
     
     // Verify job exists and belongs to this company
     // Also get the quote price to double-check
@@ -845,5 +944,23 @@ exports.processJobCompletionPayment = async (req, res) => {
       error: 'Failed to process payment',
       redirectUrl: `${process.env.FRONTEND_URL}/payment/failure`
     });
+  }
+};
+
+// Add this helper function to cleanup stale payment intents
+exports.cleanupStalePaymentIntents = async () => {
+  try {
+    const staleIntentsQuery = `
+      UPDATE payment_tracking
+      SET status = 'failed'
+      WHERE status = 'pending'
+      AND created_at < (NOW() - INTERVAL '24 hours')
+      RETURNING tracking_id
+    `;
+    
+    const result = await db.query(staleIntentsQuery);
+    console.log(`Cleaned up ${result.rowCount} stale payment intents`);
+  } catch (error) {
+    console.error('Failed to cleanup stale payment intents:', error);
   }
 };

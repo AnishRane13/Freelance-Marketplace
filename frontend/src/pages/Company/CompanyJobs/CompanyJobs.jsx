@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, Briefcase, Users, Clock, AlertCircle, Plus, Eye, Edit, Trash2} from 'lucide-react';
+import { CalendarDays, Briefcase, Users, Clock, AlertCircle, Plus, Eye, Edit, Trash2, CheckCircle, XCircle, PlayCircle } from 'lucide-react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const CompanyJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'active', 'expired'
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'active', 'expired', 'completed', 'in_progress', 'cancelled'
 
   const navigate = useNavigate(); 
   
@@ -46,16 +46,72 @@ const CompanyJobs = () => {
     window.location.href = "/company/createjob";
   };
 
-  const filteredJobs = activeFilter === 'all' 
-    ? jobs 
-    : activeFilter === 'active' 
-      ? jobs.filter(job => !job.expired) 
-      : jobs.filter(job => job.expired);
+  // Enhanced filtering based on status and expired flag
+  const filteredJobs = (() => {
+    switch(activeFilter) {
+      case 'active':
+        return jobs.filter(job => !job.expired);
+      case 'expired':
+        return jobs.filter(job => job.expired);
+      case 'completed':
+        return jobs.filter(job => job.status === 'completed');
+      case 'in_progress':
+        return jobs.filter(job => job.status === 'in_progress');
+      case 'cancelled':
+        return jobs.filter(job => job.status === 'cancelled');
+      case 'open':
+        return jobs.filter(job => job.status === 'open');
+      default:
+        return jobs;
+    }
+  })();
 
-  const getStatusColor = (expired) => {
-    return expired 
-      ? { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' }
-      : { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' };
+  // Enhanced status styling based on both expired flag and status
+  const getStatusAttributes = (job) => {
+    if (job.expired) {
+      return { 
+        bg: 'bg-red-100', 
+        text: 'text-red-800', 
+        border: 'border-red-300',
+        label: 'Expired',
+        icon: <XCircle className="h-4 w-4 mr-1" />
+      };
+    }
+    
+    switch(job.status) {
+      case 'completed':
+        return {
+          bg: 'bg-green-100',
+          text: 'text-green-800',
+          border: 'border-green-300',
+          label: 'Completed',
+          icon: <CheckCircle className="h-4 w-4 mr-1" />
+        };
+      case 'in_progress':
+        return {
+          bg: 'bg-blue-100',
+          text: 'text-blue-800',
+          border: 'border-blue-300',
+          label: 'In Progress',
+          icon: <PlayCircle className="h-4 w-4 mr-1" />
+        };
+      case 'cancelled':
+        return {
+          bg: 'bg-gray-100',
+          text: 'text-gray-800',
+          border: 'border-gray-300',
+          label: 'Cancelled',
+          icon: <XCircle className="h-4 w-4 mr-1" />
+        };
+      default: // 'open'
+        return {
+          bg: 'bg-emerald-100',
+          text: 'text-emerald-800',
+          border: 'border-emerald-300',
+          label: 'Open',
+          icon: <Briefcase className="h-4 w-4 mr-1" />
+        };
+    }
   };
 
   if (loading) {
@@ -111,7 +167,7 @@ const CompanyJobs = () => {
                 {jobs.length} {jobs.length === 1 ? 'Job' : 'Jobs'} Posted
               </span>
             </div>
-            <div className="flex bg-gray-100 rounded-lg p-1">
+            <div className="flex flex-wrap bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setActiveFilter('all')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
@@ -131,6 +187,46 @@ const CompanyJobs = () => {
                 }`}
               >
                 Active
+              </button>
+              <button
+                onClick={() => setActiveFilter('open')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  activeFilter === 'open' 
+                    ? 'bg-white shadow-sm text-blue-700' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Open
+              </button>
+              <button
+                onClick={() => setActiveFilter('in_progress')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  activeFilter === 'in_progress' 
+                    ? 'bg-white shadow-sm text-blue-700' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                In Progress
+              </button>
+              <button
+                onClick={() => setActiveFilter('completed')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  activeFilter === 'completed' 
+                    ? 'bg-white shadow-sm text-blue-700' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Completed
+              </button>
+              <button
+                onClick={() => setActiveFilter('cancelled')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  activeFilter === 'cancelled' 
+                    ? 'bg-white shadow-sm text-blue-700' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Cancelled
               </button>
               <button
                 onClick={() => setActiveFilter('expired')}
@@ -153,9 +249,7 @@ const CompanyJobs = () => {
             <p className="mt-2 text-gray-500 max-w-md mx-auto">
               {activeFilter === 'all' 
                 ? "You haven't posted any jobs yet. Get started by creating your first job listing."
-                : activeFilter === 'active'
-                  ? "You don't have any active job listings at the moment."
-                  : "You don't have any expired job listings at the moment."
+                : `You don't have any ${activeFilter} job listings at the moment.`
               }
             </p>
             {activeFilter === 'all' && (
@@ -173,19 +267,20 @@ const CompanyJobs = () => {
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">
             {filteredJobs.map((job) => {
-              const statusColor = getStatusColor(job.expired);
+              const statusAttrs = getStatusAttributes(job);
               return (
                 <div 
                   key={job.job_id} 
-                  className={`bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 border ${job.expired ? 'border-red-100' : 'border-blue-100'}`}
+                  className={`bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 border ${job.expired ? 'border-red-100' : `border-${statusAttrs.border}`}`}
                 >
                   <div className="p-6">
                     <div className="flex justify-between items-start">
                       <h3 className="text-xl font-semibold text-gray-900 truncate">{job.title}</h3>
                       <div 
-                        className={`px-3 py-1 text-xs font-medium rounded-full ${statusColor.bg} ${statusColor.text}`}
+                        className={`px-3 py-1 text-xs font-medium rounded-full flex items-center ${statusAttrs.bg} ${statusAttrs.text}`}
                       >
-                        {job.expired ? 'Expired' : 'Active'}
+                        {statusAttrs.icon}
+                        {statusAttrs.label}
                       </div>
                     </div>
                     
@@ -213,18 +308,22 @@ const CompanyJobs = () => {
                         <CalendarDays className="h-3 w-3 mr-1.5" />
                         Deadline: {formatDate(job.deadline)}
                       </div>
+                      <div className="flex items-center px-3 py-1.5 bg-purple-50 rounded-full text-xs text-purple-700">
+                        <Briefcase className="h-3 w-3 mr-1.5 text-purple-500" />
+                        Price: ${job.price}
+                      </div>
                     </div>
                   </div>
                   
                   <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-100">
                     <div className="flex space-x-3">
-                      {!job.expired && (
+                      {!job.expired && job.status !== 'completed' && job.status !== 'cancelled' && (
                         <button className="inline-flex items-center px-3.5 py-2 border border-blue-600 text-sm font-medium rounded-lg text-blue-600 bg-white hover:bg-blue-50 transition-colors duration-200">
                           <Edit className="h-4 w-4 mr-1.5" />
                           Edit
                         </button>
                       )}
-                      {!job.expired ? (
+                      {!job.expired && job.status !== 'completed' && job.status !== 'cancelled' ? (
                         <button className="inline-flex items-center px-3.5 py-2 border border-red-600 text-sm font-medium rounded-lg text-red-600 bg-white hover:bg-red-50 transition-colors duration-200">
                           <Trash2 className="h-4 w-4 mr-1.5" />
                           Delete

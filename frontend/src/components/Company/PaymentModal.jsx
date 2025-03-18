@@ -3,7 +3,11 @@ import {
   CreditCard, 
   Loader2, 
   CheckCircle, 
-  AlertCircle 
+  AlertCircle ,
+  X,
+  User,
+  Calendar,
+  Lock
 } from 'lucide-react';
 
 const PaymentModal = ({ paymentData, onClose }) => {
