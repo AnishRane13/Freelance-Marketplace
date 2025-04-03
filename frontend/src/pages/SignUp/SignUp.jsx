@@ -13,7 +13,6 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  // Building2,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -32,10 +31,6 @@ const SignUp = () => {
   const [formErrors, setFormErrors] = useState({});
 
   const type = location.state?.type || "user";
-
-  // const navigate = useNavigate();
-
-  console.log("Type is", type);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,7 +93,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#13505b] p-4 overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-blue-50 p-4 overflow-hidden">
     <NotificationStyles />
     
     {notification?.type === 'success' && (
@@ -117,28 +112,28 @@ const SignUp = () => {
       />
     )}
 
-    <div className="fixed inset-0">
-      <div className="absolute -top-48 -left-48 w-96 h-96 bg-[#119da4]/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute top-1/2 -right-48 w-96 h-96 bg-[#0c7489]/20 rounded-full blur-3xl animate-pulse delay-700" />
-      <div className="absolute -bottom-48 left-1/2 w-96 h-96 bg-[#13505b]/20 rounded-full blur-3xl animate-pulse delay-1000" />
+    <div className="fixed inset-0 pointer-events-none">
+      <div className="absolute -top-48 -left-48 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute top-1/2 -right-48 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-700" />
+      <div className="absolute -bottom-48 left-1/2 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
     </div>
 
     <div className="relative w-full max-w-md">
-      <div className="relative backdrop-blur-xl bg-[#ffffff]/80 p-8 rounded-3xl border border-white/20 shadow-2xl shadow-black/5">
-        <div className="space-y-2 mb-8">
-          <h1 className="text-4xl font-bold text-[#040404]">Create account</h1>
-          <p className="text-[#13505b]">Join us today! Please fill in your details</p>
+      <div className="relative backdrop-blur-xl bg-white/90 p-8 rounded-3xl border border-white/30 shadow-xl shadow-blue-900/5">
+        <div className="space-y-2 mb-8 text-center">
+          <h1 className="text-4xl font-bold text-blue-900">Create account</h1>
+          <p className="text-blue-600">Join us today! Please fill in your details</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <label htmlFor="name" className="text-sm font-medium text-[#13505b] ml-1">
+            <label htmlFor="name" className="text-sm font-medium text-blue-700 ml-1">
               Full name
             </label>
             <div className={`relative transition-all duration-300 ${activeInput === 'name' ? 'scale-[1.02]' : ''}`}>
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <User className={`h-5 w-5 transition-all duration-300 ${
-                  activeInput === 'name' ? 'text-[#119da4]' : 'text-[#0c7489]'
+                  activeInput === 'name' ? 'text-blue-600' : 'text-blue-400'
                 }`} />
               </div>
               <input
@@ -148,7 +143,7 @@ const SignUp = () => {
                 onChange={(e) => setName(e.target.value)}
                 onFocus={() => setActiveInput('name')}
                 onBlur={() => setActiveInput('')}
-                className="block w-full pl-11 pr-4 py-3.5 border-2 border-[#13505b]/10 rounded-2xl focus:ring-2 focus:ring-[#119da4] focus:border-transparent bg-[#13505b]/5 transition-all duration-300"
+                className="block w-full pl-11 pr-4 py-3.5 border-2 border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-300"
                 placeholder="John Doe"
                 required
               />
@@ -157,13 +152,13 @@ const SignUp = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="email" className="text-sm font-medium text-[#13505b] ml-1">
+            <label htmlFor="email" className="text-sm font-medium text-blue-700 ml-1">
               Email address
             </label>
             <div className={`relative transition-all duration-300 ${activeInput === 'email' ? 'scale-[1.02]' : ''}`}>
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <Mail className={`h-5 w-5 transition-all duration-300 ${
-                  activeInput === 'email' ? 'text-[#119da4]' : 'text-[#0c7489]'
+                  activeInput === 'email' ? 'text-blue-600' : 'text-blue-400'
                 }`} />
               </div>
               <input
@@ -173,7 +168,7 @@ const SignUp = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 onFocus={() => setActiveInput('email')}
                 onBlur={() => setActiveInput('')}
-                className="block w-full pl-11 pr-4 py-3.5 border-2 border-[#13505b]/10 rounded-2xl focus:ring-2 focus:ring-[#119da4] focus:border-transparent bg-[#13505b]/5 transition-all duration-300"
+                className="block w-full pl-11 pr-4 py-3.5 border-2 border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-300"
                 placeholder="name@company.com"
                 required
               />
@@ -182,11 +177,11 @@ const SignUp = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="password" className="text-sm font-medium text-[#13505b] ml-1">Password</label>
+            <label htmlFor="password" className="text-sm font-medium text-blue-700 ml-1">Password</label>
             <div className={`relative transition-all duration-300 ${activeInput === 'password' ? 'scale-[1.02]' : ''}`}>
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <Lock className={`h-5 w-5 transition-all duration-300 ${
-                  activeInput === 'password' ? 'text-[#119da4]' : 'text-[#0c7489]'
+                  activeInput === 'password' ? 'text-blue-600' : 'text-blue-400'
                 }`} />
               </div>
               <input
@@ -196,7 +191,7 @@ const SignUp = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 onFocus={() => setActiveInput('password')}
                 onBlur={() => setActiveInput('')}
-                className="block w-full pl-11 pr-12 py-3.5 border-2 border-[#13505b]/10 rounded-2xl focus:ring-2 focus:ring-[#119da4] focus:border-transparent bg-[#13505b]/5 transition-all duration-300"
+                className="block w-full pl-11 pr-12 py-3.5 border-2 border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all duration-300"
                 placeholder="Create a strong password"
                 required
               />
@@ -207,9 +202,9 @@ const SignUp = () => {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-[#0c7489] hover:text-[#119da4] transition-all duration-300" />
+                  <EyeOff className="h-5 w-5 text-blue-400 hover:text-blue-600 transition-all duration-300" />
                 ) : (
-                  <Eye className="h-5 w-5 text-[#0c7489] hover:text-[#119da4] transition-all duration-300" />
+                  <Eye className="h-5 w-5 text-blue-400 hover:text-blue-600 transition-all duration-300" />
                 )}
               </button>
             </div>
@@ -220,17 +215,17 @@ const SignUp = () => {
               <input
                 id="terms"
                 type="checkbox"
-                className="w-4 h-4 rounded-md border-[#13505b]/20 text-[#119da4] focus:ring-[#119da4] transition-colors duration-200"
+                className="w-4 h-4 rounded-md border-blue-200 text-blue-600 focus:ring-blue-500 transition-colors duration-200"
                 required
               />
             </div>
-            <label htmlFor="terms" className="text-sm text-[#13505b]">
+            <label htmlFor="terms" className="text-sm text-blue-700">
               I agree to the{' '}
-              <button type="button" className="text-[#119da4] hover:text-[#0c7489] font-medium transition-colors duration-200">
+              <button type="button" className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200">
                 Terms of Service
               </button>{' '}
               and{' '}
-              <button type="button" className="text-[#119da4] hover:text-[#0c7489] font-medium transition-colors duration-200">
+              <button type="button" className="text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200">
                 Privacy Policy
               </button>
             </label>
@@ -239,7 +234,7 @@ const SignUp = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="relative w-full bg-[#119da4] text-white py-4 px-6 rounded-2xl font-medium transition-all duration-300 hover:bg-[#0c7489] focus:outline-none focus:ring-2 focus:ring-[#119da4] focus:ring-offset-2 overflow-hidden group"
+            className="relative w-full bg-blue-600 text-white py-4 px-6 rounded-xl font-medium transition-all duration-300 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 overflow-hidden group shadow-lg shadow-blue-500/30"
           >
             <div className="relative flex items-center justify-center space-x-2">
               <span className={`transition-all duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
@@ -254,12 +249,12 @@ const SignUp = () => {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-[#13505b]/10">
-          <p className="text-center text-[#13505b]">
+        <div className="mt-8 pt-6 border-t border-blue-100">
+          <p className="text-center text-blue-700">
             Already have an account?{' '}
             <button
               onClick={() => navigate('/login', { state: { type } })}
-              className="font-semibold text-[#119da4] hover:text-[#0c7489] transition-colors duration-200"
+              className="font-semibold text-blue-600 hover:text-blue-800 transition-colors duration-200"
             >
               Sign in
             </button>
@@ -269,19 +264,19 @@ const SignUp = () => {
         <div className="mt-6 space-y-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#13505b]/10" />
+              <div className="w-full border-t border-blue-100" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white/80 text-[#13505b]">Or sign up with</span>
+              <span className="px-4 bg-white/80 text-blue-700">Or sign up with</span>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {['Google', 'GitHub', 'Twitter'].map((provider) => (
               <button
                 key={provider}
-                className="flex items-center justify-center py-2.5 px-4 border-2 border-[#13505b]/10 rounded-xl hover:border-[#119da4]/20 bg-white/50 backdrop-blur-sm transition-all duration-300 group"
+                className="flex items-center justify-center py-2.5 px-4 border-2 border-blue-100 rounded-xl hover:bg-blue-50 hover:border-blue-300 bg-white/70 backdrop-blur-sm transition-all duration-300 group"
               >
-                <span className="text-sm font-medium text-[#13505b] group-hover:text-[#119da4]">{provider}</span>
+                <span className="text-sm font-medium text-blue-700 group-hover:text-blue-800">{provider}</span>
               </button>
             ))}
           </div>
