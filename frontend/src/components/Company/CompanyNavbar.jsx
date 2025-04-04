@@ -11,7 +11,7 @@ const UserNavbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-r from-[#13505B] to-[#119DA4] shadow-lg">
+      <nav className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-r from-[#119DA1] to-[#119DA1] shadow-lg">
         <div className="h-16 px-4 flex items-center justify-between">
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center space-x-2">

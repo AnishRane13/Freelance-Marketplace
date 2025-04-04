@@ -8,6 +8,7 @@ import CommentSection from './CommentSection';
 const Post = ({ post, onLike, onComment, socket, userId }) => {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [localComments, setLocalComments] = useState(post.comments || []);
+  const [isLikeAnimating, setIsLikeAnimating] = useState(false);
   
   // Update local comments when post comments change
   useEffect(() => {
@@ -47,25 +48,41 @@ const Post = ({ post, onLike, onComment, socket, userId }) => {
     onComment(post.post_id, comment);
   };
 
+  const handleLikeClick = () => {
+    setIsLikeAnimating(true);
+    onLike(post.post_id);
+    setTimeout(() => setIsLikeAnimating(false), 1000);
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-[1.02] transition-transform duration-200">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl mb-6 border border-gray-100">
       <PostHeader
         user_name={post.user_name}
-        userId={userId}
+        userId={post.user_id}
         profile_picture={post.profile_picture}
         category_name={post.category_name}
         created_at={post.created_at}
       />
+      
       <PostContent content={post.content} />
-      {post.images && post.images.length > 0 && <ImageCarousel images={post.images} />}
+      
+      {post.images && post.images.length > 0 && (
+        <div className="mt-2">
+          <ImageCarousel images={post.images} className="h-96" />
+        </div>
+      )}
+      
       <PostActions
         post_id={post.post_id}
         likes_count={post.likes_count}
         comments_count={post.comments_count}
-        onLike={onLike}
+        onLike={handleLikeClick}
         onCommentClick={handleCommentClick}
         isLiked={post.is_liked}
+        isLikeAnimating={isLikeAnimating}
+        isCommentsOpen={isCommentsOpen}
       />
+      
       <CommentSection
         isOpen={isCommentsOpen}
         comments={localComments}

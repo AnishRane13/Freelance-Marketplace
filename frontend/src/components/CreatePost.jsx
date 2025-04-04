@@ -161,23 +161,23 @@ const CreatePost = ({ onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 bg-[#119da4]/10 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-200">
+      <div className="fixed inset-0 bg-[#3B82F6]/10 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-200">
         <div 
           ref={modalRef}
-          className={`bg-white rounded-xl w-full max-w-2xl p-6 m-4 shadow-xl transition-all duration-200 ${animation} border-t-4 border-[#119da4]`}
+          className={`bg-white rounded-xl w-full max-w-2xl p-6 m-4 shadow-xl transition-all duration-200 ${animation} border-t-4 border-[#3B82F6]`}
         >
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-[#13505b] font-semibold text-xl">Create Post</h2>
             <button 
               onClick={handleClose} 
-              className="text-[#13505b]/60 hover:text-[#13505b] transition-colors rounded-full hover:bg-[#119da4]/10 p-2"
+              className="text-[#13505b]/60 hover:text-[#13505b] transition-colors rounded-full hover:bg-[#3B82F6]/10 p-2"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="w-full h-0.5 bg-[#119da4]/20 mb-5"></div>
+          <div className="w-full h-0.5 bg-[#3B82F6]/20 mb-5"></div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative">
@@ -189,7 +189,7 @@ const CreatePost = ({ onClose }) => {
                   }
                 }}
                 placeholder="What's on your mind?"
-                className="w-full min-h-32 p-4 bg-white rounded-lg border-2 border-[#119da4]/30 text-[#13505b] focus:outline-none focus:ring-2 focus:ring-[#119da4]/50 focus:border-transparent transition-all duration-200 resize-y"
+                className="w-full min-h-32 p-4 bg-white rounded-lg border-2 border-[#3B82F6]/30 text-[#13505b] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-transparent transition-all duration-200 resize-y"
                 required
               />
               <div className="text-sm text-gray-500 text-right mt-1">
@@ -201,7 +201,7 @@ const CreatePost = ({ onClose }) => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full p-3 pl-4 pr-10 bg-white rounded-lg border-2 border-[#119da4]/30 text-[#13505b] focus:outline-none focus:ring-2 focus:ring-[#119da4]/50 focus:border-transparent appearance-none transition-all duration-200"
+                className="w-full p-3 pl-4 pr-10 bg-white rounded-lg border-2 border-[#3B82F6]/30 text-[#13505b] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-transparent appearance-none transition-all duration-200"
                 required
               >
                 <option value="">Select Category</option>
@@ -211,7 +211,7 @@ const CreatePost = ({ onClose }) => {
                   </option>
                 ))}
               </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[#119da4]">
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[#3B82F6]">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
@@ -228,9 +228,9 @@ const CreatePost = ({ onClose }) => {
             />
 
             {imagePreviews.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-[#119da4]/5 rounded-lg border border-[#119da4]/20">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-[#3B82F6]/5 rounded-lg border border-[#3B82F6]/20">
                 {imagePreviews.map((preview, index) => (
-                  <div key={index} className="relative group rounded-lg overflow-hidden shadow-md bg-white border border-[#119da4]/20">
+                  <div key={index} className="relative group rounded-lg overflow-hidden shadow-md bg-white border border-[#3B82F6]/20">
                     <img 
                       src={preview} 
                       alt={`Preview ${index + 1}`} 
@@ -239,7 +239,7 @@ const CreatePost = ({ onClose }) => {
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(index)}
-                      className="absolute top-2 right-2 p-1.5 bg-white text-[#119da4] rounded-full hover:bg-[#119da4] hover:text-white transition-all duration-200 transform hover:scale-105 shadow-lg"
+                      className="absolute top-2 right-2 p-1.5 bg-white text-[#3B82F6] rounded-full hover:bg-[#3B82F6] hover:text-white transition-all duration-200 transform hover:scale-105 shadow-lg"
                       aria-label="Remove image"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -254,7 +254,7 @@ const CreatePost = ({ onClose }) => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={images.length >= MAX_IMAGES}
-                className="flex-1 py-3 px-4 bg-white border-2 border-[#119da4] rounded-lg text-[#119da4] hover:bg-[#119da4]/5 transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 px-4 bg-white border-2 border-[#3B82F6] rounded-lg text-[#3B82F6] hover:bg-[#3B82F6]/5 transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ImageIcon className="w-5 h-5" />
                 Add Images ({images.length}/{MAX_IMAGES})
@@ -262,20 +262,20 @@ const CreatePost = ({ onClose }) => {
               
             </div>
 
-            <div className="w-full h-0.5 bg-[#119da4]/20 my-2"></div>
+            <div className="w-full h-0.5 bg-[#3B82F6]/20 my-2"></div>
 
             <div className="flex justify-end gap-3">
               <button 
                 type="button" 
                 onClick={handleClose} 
-                className="px-5 py-2.5 text-[#13505b] bg-white border border-[#119da4]/30 hover:bg-[#119da4]/5 rounded-lg transition-colors font-medium"
+                className="px-5 py-2.5 text-[#13505b] bg-white border border-[#3B82F6]/30 hover:bg-[#3B82F6]/5 rounded-lg transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-5 py-2.5 bg-[#119da4] text-white rounded-lg hover:bg-[#0c7489] transition-colors shadow-md disabled:opacity-70 flex items-center gap-2 font-medium"
+                className="px-5 py-2.5 bg-[#3B82F6] text-white rounded-lg hover:bg-[#225AD7] transition-colors shadow-md disabled:opacity-70 flex items-center gap-2 font-medium"
               >
                 {isLoading ? (
                   <>

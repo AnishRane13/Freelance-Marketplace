@@ -167,7 +167,7 @@ const CompanyDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#13505b] to-[#0a2e33] p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-50 p-4 sm:p-6">
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

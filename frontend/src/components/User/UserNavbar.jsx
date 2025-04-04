@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './navigation/Sidebar';
 import MobileBottomNav from './navigation/MobileBottomNav';
 import UserDropdown from './navigation/UserDropdown';
-import SearchBar from './navigation/SearchBar';
+// import SearchBar from './navigation/SearchBar';
 
 const UserNavbar = () => {
   const username = localStorage.getItem("name") || "User";
@@ -11,7 +11,7 @@ const UserNavbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-r from-[#13505B] to-[#119DA4] shadow-lg">
+      <nav className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-r from-[#119DA1] to-[#119DA1] shadow-lg">
         <div className="h-16 px-4 flex items-center justify-between">
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center space-x-2">
@@ -21,7 +21,7 @@ const UserNavbar = () => {
             <span className="text-white text-lg font-semibold hidden sm:block">User</span>
           </Link>
 
-          <SearchBar />
+          {/* <SearchBar /> */}
           <UserDropdown username={username} user_id={user_id} />
         </div>
       </nav>
