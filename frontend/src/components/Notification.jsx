@@ -14,7 +14,7 @@ const BaseNotification = ({ message, onClose, duration = 5000, children }) => {
   }, [duration, onClose]);
 
   return (
-    <div className="fixed top-4 right-4 w-full max-w-sm transform transition-all duration-300 ease-in-out animate-slide-in">
+    <div className="fixed top-4 right-4 w-full max-w-sm transform transition-all duration-300 ease-in-out animate-slide-in z-50">
       {children}
     </div>
   );
@@ -81,7 +81,7 @@ export const FormFieldError = ({ message }) => {
 // Notifications Container Component
 export const NotificationsContainer = ({ notifications, removeNotification }) => {
   return (
-    <>
+    <div className="z-50">
       {notifications.map((notification) => (
         notification.type === 'success' ? (
           <SuccessNotification
@@ -98,7 +98,7 @@ export const NotificationsContainer = ({ notifications, removeNotification }) =>
         )
       ))}
       <NotificationStyles />
-    </>
+    </div>
   );
 };
 
