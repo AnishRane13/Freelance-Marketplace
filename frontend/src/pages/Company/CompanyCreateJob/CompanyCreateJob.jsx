@@ -47,6 +47,8 @@ const CompanyCreateJob = () => {
     setDeadline(tomorrowFormatted);
   }, [companyId]);
 
+  console.log("comspoashdhdh", companyId)
+
   const checkSubscriptionStatus = async () => {
     setIsCheckingSubscription(true);
     try {

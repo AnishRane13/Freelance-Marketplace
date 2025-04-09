@@ -4,6 +4,7 @@ import LoadingSpinner from "../../LoadingSpinner";
 import { motion } from "framer-motion";
 
 const UserAgreementsContent = ({ user_id }) => {
+  console.log("This is from Agreement page", user_id)
   const [agreements, setAgreements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,6 +20,7 @@ const UserAgreementsContent = ({ user_id }) => {
         if (response.ok) {
           setAgreements(data.agreements || []);
           setError(null);
+          console.log(response)
         } else {
           throw new Error(data.error || "Failed to fetch agreements");
         }

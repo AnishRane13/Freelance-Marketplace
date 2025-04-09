@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import AgreementTab from '../../../components/Company/AgreementTab';
+import AgreementTab from "../../../components/Company/AgreementTab";
 import {
   Briefcase,
   Calendar,
@@ -29,12 +29,17 @@ const JobDetails = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  // Update how you get the userType at the beginning of your component
+  const [userType, setUserType] = useState(localStorage.getItem("userType"));
+  const userId = localStorage.getItem("user_id");
+
   useEffect(() => {
     const fetchJobDetails = async () => {
       try {
         // Get user information from localStorage
-        const userType = localStorage.getItem("userType");
-        const userId = localStorage.getItem("user_id");
+        // const userType = localStorage.getItem("userType");
+        // // console.log(userType)
+        // const userId = localStorage.getItem("user_id");
 
         const response = await fetch(
           `http://localhost:5000/jobs/jobDetails/${job_id}`,
@@ -68,6 +73,9 @@ const JobDetails = () => {
       day: "numeric",
     });
   };
+
+  const userrrType = localStorage.getItem("userType");
+  console.log(userrrType);
 
   const isJobExpired = (deadline) => {
     const now = new Date();
@@ -126,8 +134,13 @@ const JobDetails = () => {
     try {
       const userId = localStorage.getItem("user_id");
 
+      // Make sure agreement exists before accessing agreement_id
+      if (!jobDetails?.agreement?.agreement_id) {
+        throw new Error("Agreement not found");
+      }
+
       const response = await fetch(
-        `http://localhost:5000/agreements/accept/${agreement.agreement_id}`,
+        `http://localhost:5000/agreements/accept/${jobDetails.agreement.agreement_id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -152,8 +165,13 @@ const JobDetails = () => {
     try {
       const userId = localStorage.getItem("user_id");
 
+      // Make sure agreement exists before accessing agreement_id
+      if (!jobDetails?.agreement?.agreement_id) {
+        throw new Error("Agreement not found");
+      }
+
       const response = await fetch(
-        `http://localhost:5000/agreements/decline/${agreement.agreement_id}`,
+        `http://localhost:5000/agreements/decline/${jobDetails.agreement.agreement_id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -170,7 +188,7 @@ const JobDetails = () => {
       window.location.reload();
     } catch (err) {
       console.error("Error declining agreement:", err);
-      setError(error.message);
+      setError(err.message); // Fixed: Changed 'error.message' to 'err.message'
     }
   };
 
@@ -178,8 +196,8 @@ const JobDetails = () => {
     if (navigator.share) {
       navigator
         .share({
-          title: job?.title,
-          text: `Check out this job: ${job?.title}`,
+          title: jobDetails?.job?.title, // Fixed: Use proper reference to job title
+          text: `Check out this job: ${jobDetails?.job?.title}`,
           url: window.location.href,
         })
         .catch((err) => console.error("Error sharing:", err));
@@ -227,10 +245,12 @@ const JobDetails = () => {
     return null;
   }
 
+  console.log("This is jobDetails", jobDetails)
+
   const { job, quotes, selectedFreelancer, agreement } = jobDetails;
   const expired = isJobExpired(job.deadline);
-  const userType = localStorage.getItem("userType");
-  const userId = localStorage.getItem("user_id");
+  // const userType = localStorage.getItem("userType");
+  // const userId = localStorage.getItem("user_id");
 
   // Check if current user has already submitted a quote
   const hasSubmittedQuote = quotes?.some(
@@ -240,6 +260,19 @@ const JobDetails = () => {
   const userQuote = quotes?.find(
     (quote) => quote.user_id.toString() === userId
   );
+
+  console.log("userType:", userType);
+  console.log("job.company_id:", job.company_id);
+  console.log("userId:", userId);
+  console.log("selectedFreelancer:", selectedFreelancer);
+  console.log(
+    "Condition result:",
+    userType === "company" && !selectedFreelancer
+  );
+
+  console.log("Agreement data:", agreement);
+console.log("userType:", userType);
+console.log("Tab condition:", agreement && activeTab === "agreement");
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen">
@@ -353,7 +386,7 @@ const JobDetails = () => {
                   >
                     Description
                   </button>
-                  {userType === "freelancer" &&
+                  {userType === "user" &&
                     !expired &&
                     !hasSubmittedQuote &&
                     !selectedFreelancer && (
@@ -368,7 +401,7 @@ const JobDetails = () => {
                         Submit Quote
                       </button>
                     )}
-                  {userType === "freelancer" && hasSubmittedQuote && (
+                  {userType === "user" && hasSubmittedQuote && (
                     <button
                       onClick={() => setActiveTab("myquote")}
                       className={`px-4 py-4 text-sm font-medium whitespace-nowrap ${
@@ -454,7 +487,7 @@ const JobDetails = () => {
                       </div>
                     </div>
 
-                    {userType === "company" && quotes.length > 0 && (
+                    {userType == "company" && quotes && quotes.length > 0 && (
                       <div className="mt-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                           Freelancer Quotes
@@ -497,10 +530,9 @@ const JobDetails = () => {
                                 {quote.cover_letter}
                               </p>
                               {userType === "company" &&
-                                job.company_id.toString() === userId &&
+                                // job.company_id.toString() === userId &&
                                 !selectedFreelancer && (
                                   <button
-                                    // Replace the existing onClick handler for the "Select Freelancer" button with this:
                                     onClick={async () => {
                                       try {
                                         const response = await fetch(
@@ -720,8 +752,8 @@ const JobDetails = () => {
                           </p>
                         </div>
 
-                        {userType === "company" &&
-                          job.company_id.toString() === userId &&
+                        {userType == "company" &&
+                          // job.company_id.toString() === userId &&
                           !agreement && (
                             <button
                               onClick={async () => {
@@ -769,20 +801,29 @@ const JobDetails = () => {
                   </div>
                 )}
 
-                {activeTab === "agreement" && agreement && (
-                  <AgreementTab
-                    agreement={agreement}
-                    job={job}
-                    selectedFreelancer={selectedFreelancer}
-                    userId={userId}
-                    userType={userType}
-                    formatDate={formatDate}
-                    handleAcceptAgreement={handleAcceptAgreement}
-                    handleDeclineAgreement={handleDeclineAgreement}
-                  />
-                )}
+                {activeTab === "agreement" &&
+                  agreement &&
+                  (console.log("Rendering AgreementTab with:", {
+                    activeTab,
+                    agreement,
+                    job,
+                    selectedFreelancer,
+                    userId,
+                    userType,
+                  }),
+                  (
+                    <AgreementTab
+                      agreement={agreement}
+                      job={job}
+                      selectedFreelancer={selectedFreelancer}
+                      userId={userId}
+                      userType={userType}
+                      formatDate={formatDate}
+                      handleAcceptAgreement={handleAcceptAgreement}
+                      handleDeclineAgreement={handleDeclineAgreement}
+                    />
+                  ))}
               </div>
-              )
             </div>
           </div>
 
@@ -849,7 +890,7 @@ const JobDetails = () => {
                   </div>
                 </div>
 
-                {userType === "freelancer" &&
+                {userType === "user" &&
                   !expired &&
                   !hasSubmittedQuote &&
                   !selectedFreelancer && (
@@ -861,7 +902,7 @@ const JobDetails = () => {
                     </button>
                   )}
 
-                {userType === "freelancer" && hasSubmittedQuote && (
+                {userType === "user" && hasSubmittedQuote && (
                   <button
                     onClick={() => setActiveTab("myquote")}
                     className="w-full mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

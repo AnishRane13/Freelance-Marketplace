@@ -6,11 +6,28 @@ const { sendNotification } = require('../../utils/notificationHelper');
 
 exports.createJob = async (req, res) => {
   try {
-    const { title, description, category_id, price, location, deadline, status } = req.body;
-    const companyId = req.companyId; // Now properly retrieved
+    const { title, description, category_id, price, location, deadline, status, company_id } = req.body;
+    const userId = req.body.company_id; // This is actually the user_id from localStorage
+    
+    // Get the actual company_id for this user_id
+    const companyResult = await db.query(
+      'SELECT company_id FROM companies WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (companyResult.rows.length === 0) {
+      return res.status(400).json({ error: "No company found for this user." });
+    }
+    
+    const companyId = companyResult.rows[0].company_id;
     const subscription = req.activeSubscription;
 
+    console.log("Incoming request to create job with data:", req.body);
+    console.log("Company ID:", companyId);
+    console.log("Active Subscription:", subscription);
+
     if (!subscription) {
+      console.warn("No active subscription found.");
       return res.status(403).json({ error: "You don't have an active subscription." });
     }
 
@@ -19,18 +36,24 @@ exports.createJob = async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING job_id
     `;
 
+    console.log("Executing job insert query...");
     const result = await db.query(jobQuery, [companyId, title, description, category_id, price, location, deadline, status]);
 
     if (result.rows.length > 0) {
+      console.log("Job successfully inserted with ID:", result.rows[0].job_id);
+
       // Update jobs_posted count
       const updateSubscriptionQuery = `
         UPDATE subscriptions 
         SET jobs_posted = jobs_posted + 1 
         WHERE subscription_id = $1
       `;
+
+      console.log("Updating subscription's jobs_posted count...");
       await db.query(updateSubscriptionQuery, [subscription.subscription_id]);
     }
 
+    console.log("Job creation complete. Sending response...");
     res.status(201).json({ success: true, job: result.rows[0] });
   } catch (error) {
     console.error("Job Creation Error:", error);
@@ -39,10 +62,25 @@ exports.createJob = async (req, res) => {
 };
 
 exports.getCompanyJobs = async (req, res) => {
-  const companyId = req.params.userId;
+  const userId = req.params.userId;
 
   try {
-    const query = `
+    // First, get the company_id associated with this user_id
+    const companyQuery = `
+      SELECT company_id FROM companies 
+      WHERE user_id = $1
+    `;
+    
+    const companyResult = await db.query(companyQuery, [userId]);
+    
+    if (companyResult.rows.length === 0) {
+      return res.status(404).json({ error: "No company found for this user" });
+    }
+    
+    const companyId = companyResult.rows[0].company_id;
+    
+    // Now use the correct company_id to fetch jobs
+    const jobsQuery = `
       SELECT j.*, 
              cat.name AS category_name,
              (SELECT COUNT(*) FROM quotes WHERE job_id = j.job_id) AS quotes_count,
@@ -53,15 +91,14 @@ exports.getCompanyJobs = async (req, res) => {
       ORDER BY j.created_at DESC
     `;
     
-    const result = await db.query(query, [companyId]);
+    const jobsResult = await db.query(jobsQuery, [companyId]);
     
-    res.json({ jobs: result.rows });
+    res.json({ jobs: jobsResult.rows });
   } catch (error) {
     console.error("Get Company Jobs Error:", error);
     res.status(500).json({ error: "Failed to fetch company jobs" });
   }
 };
-
 
 exports.getUserJobs = async (req, res) => {
   const { userId, category } = req.params;
@@ -127,7 +164,10 @@ exports.getUserJobs = async (req, res) => {
 exports.getJobDetails = async (req, res) => {
   const { job_id } = req.params;  // Use req.params for job_id
   const { userId, userType } = req.body;
-
+  
+  console.log('Received job_id:', job_id);
+  console.log('User ID:', userId, '| User Type:', userType);
+  
   try {
     // Get job details
     const jobQuery = `
@@ -139,32 +179,51 @@ exports.getJobDetails = async (req, res) => {
       JOIN users u ON comp.user_id = u.user_id 
       JOIN categories cat ON j.category_id = cat.category_id
       WHERE j.job_id = $1
-    `;  
-    
+    `;
     const jobResult = await db.query(jobQuery, [job_id]);
     
+    console.log('Job query result:', jobResult.rows);
     if (jobResult.rows.length === 0) {
+      console.log('No job found with job_id:', job_id);
       return res.status(404).json({ error: 'Job not found' });
     }
     
     const job = jobResult.rows[0];
-
-    // Get quotes only if user is the company that posted the job
     let quotes = [];
-    if (userType === 'company' && job.company_id == userId) {
-      const quotesQuery = `
-        SELECT q.*, u.name, u.profile_picture, 
-          (SELECT COUNT(*) FROM job_completion jc WHERE jc.user_id = q.user_id AND jc.status = 'completed') as completed_jobs
-        FROM quotes q
-        JOIN users u ON q.user_id = u.user_id
-        WHERE q.job_id = $1
-        ORDER BY q.created_at DESC
+    
+    // Only fetch quotes if user is the company that posted the job
+    // First, check if the userId (which is the user_id) is associated with the company that posted this job
+    if (userType === 'company') {
+      // Get the company_id for this user
+      const companyQuery = `
+        SELECT company_id FROM companies 
+        WHERE user_id = $1
       `;
       
-      const quotesResult = await db.query(quotesQuery, [job_id]);
-      quotes = quotesResult.rows;
+      const companyResult = await db.query(companyQuery, [userId]);
+      
+      if (companyResult.rows.length > 0 && companyResult.rows[0].company_id == job.company_id) {
+        console.log('Fetching quotes for company:', companyResult.rows[0].company_id);
+        
+        const quotesQuery = `
+          SELECT q.*, u.name, u.profile_picture, 
+            (SELECT COUNT(*) FROM job_completion jc WHERE jc.user_id = q.user_id AND jc.status = 'completed') as completed_jobs
+          FROM quotes q
+          JOIN users u ON q.user_id = u.user_id
+          WHERE q.job_id = $1
+          ORDER BY q.created_at DESC
+        `;
+        
+        const quotesResult = await db.query(quotesQuery, [job_id]);
+        quotes = quotesResult.rows;
+        console.log('Quotes fetched:', quotes.length);
+      } else {
+        console.log('User is not the job posting company');
+      }
+    } else {
+      console.log('User is not authorized to view quotes');
     }
-
+    
     // Check if there's a selected freelancer
     const selectedQuery = `
       SELECT sf.*, u.name, u.email, u.profile_picture
@@ -172,18 +231,20 @@ exports.getJobDetails = async (req, res) => {
       JOIN users u ON sf.user_id = u.user_id
       WHERE sf.job_id = $1
     `;
-
+    
     const selectedResult = await db.query(selectedQuery, [job_id]);
     const selectedFreelancer = selectedResult.rows.length > 0 ? selectedResult.rows[0] : null;
-
+    console.log('Selected Freelancer:', selectedFreelancer);
+    
     // Check for agreement status
     const agreementQuery = `
       SELECT * FROM agreements WHERE job_id = $1
     `;
-
+    
     const agreementResult = await db.query(agreementQuery, [job_id]);
     const agreement = agreementResult.rows.length > 0 ? agreementResult.rows[0] : null;
-
+    console.log('Agreement:', agreement);
+    
     res.json({
       job,
       quotes,

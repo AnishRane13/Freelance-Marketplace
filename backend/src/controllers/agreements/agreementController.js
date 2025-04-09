@@ -4,7 +4,12 @@ const { sendNotification } = require('../../utils/notificationHelper');
 
 exports.getAgreement = async (req, res) => {
   const { agreementId } = req.params;
-  const { userId } = req.body; 
+  const { userId } = req.body;
+
+  console.log("Incoming Request - getAgreement");
+  console.log("agreementId:", agreementId);
+  console.log("userId:", userId);
+
   try {
     const query = `
       SELECT a.*, j.title as job_title, j.description as job_description,
@@ -18,19 +23,26 @@ exports.getAgreement = async (req, res) => {
       JOIN users c ON comp.user_id = c.user_id
       WHERE a.agreement_id = $1 AND (a.user_id = $2 OR c.user_id = $2)
     `;
-    
-    const result = await db.query(query, [agreementId, userId]);
-    
+
+    console.log("Executing query with values:", [agreementId, userId]);
+
+    const result = await db.query(query, [Number(agreementId), Number(userId)]);
+
+    console.log("Query result:", result.rows);
+
     if (result.rows.length === 0) {
+      console.log("No agreement found for the given ID and user.");
       return res.status(404).json({ error: 'Agreement not found' });
     }
-    
+
+    console.log("Agreement found and returned successfully.");
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Get Agreement Error:', error);
     res.status(500).json({ error: 'Failed to fetch agreement' });
   }
 };
+
 
 exports.respondToAgreement = async (req, res) => {
   const { agreementId } = req.params;
