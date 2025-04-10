@@ -15,29 +15,38 @@ const UserAgreementDetails = () => {
   useEffect(() => {
     const fetchAgreementDetails = async () => {
       setLoading(true);
+      console.log("Fetching agreement details...");
       try {
         // Get current user from localStorage or context
         const user_id = JSON.parse(localStorage.getItem("user_id"));
-        console.log("Cureneenenen", user_id);
-
+        console.log("Current user_id from localStorage:", user_id);
+  
+        // Constructing fetch URL
+        const url = `http://localhost:5000/agreements/${agreementId}`;
+        console.log("Fetch URL:", url);
+  
+        // Creating fetch options
+        const options = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ userId: user_id }),
+        };
+        console.log("Fetch options:", options);
+  
         // Make POST request to get agreement details
-        const response = await fetch(
-          `http://localhost:5000/agreements/${agreementId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({ userId: user_id }),
-          }
-        );
-
+        const response = await fetch(url, options);
+        console.log("Raw response:", response);
+  
         const data = await response.json();
-
+        console.log("Response data:", data);
+  
         if (response.ok) {
           setAgreement(data);
           setError(null);
+          console.log("Agreement set successfully:", data);
         } else {
           throw new Error(data.error || "Failed to fetch agreement details");
         }
@@ -46,13 +55,18 @@ const UserAgreementDetails = () => {
         setError("Failed to load agreement details. Please try again later.");
       } finally {
         setLoading(false);
+        console.log("Loading finished.");
       }
     };
-
+  
     if (agreementId) {
+      console.log("agreementId is present:", agreementId);
       fetchAgreementDetails();
+    } else {
+      console.log("No agreementId found.");
     }
   }, [agreementId]);
+  
 
   const handleGoBack = () => {
     navigate(-1);

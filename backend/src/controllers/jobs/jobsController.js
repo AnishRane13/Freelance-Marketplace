@@ -696,14 +696,32 @@ exports.markJobComplete = async (req, res) => {
 
 exports.createJobCompletionPayment = async (req, res) => {
   const { jobId } = req.params;
-  const { company_id } = req.body;
-  
+  const { company_id } = req.body; // This is actually the user_id from users table
+
+  console.log(`Received request to create job payment for Job ID: ${jobId} and User ID: ${company_id}`);
+
   if (!company_id) {
-    return res.status(400).json({ error: 'Company ID is required' });
+    console.log('User ID missing in request body');
+    return res.status(400).json({ error: 'User ID is required' });
   }
-  
+
   try {
-    // First check if there's already a pending payment intent for this job
+    // First, get the actual company_id from the companies table using the user_id
+    const companyQuery = `
+      SELECT company_id FROM companies WHERE user_id = $1
+    `;
+    
+    const companyResult = await db.query(companyQuery, [company_id]);
+    
+    if (companyResult.rows.length === 0) {
+      console.log(`No company found for user ID: ${company_id}`);
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    
+    const actualCompanyId = companyResult.rows[0].company_id;
+    console.log(`Found actual company ID: ${actualCompanyId} for user ID: ${company_id}`);
+    
+    console.log('Checking for existing pending payment intent...');
     const existingPaymentQuery = `
       SELECT * FROM payment_tracking
       WHERE company_id = $1 AND plan_type = 'job_completion' AND status = 'pending'
@@ -712,14 +730,13 @@ exports.createJobCompletionPayment = async (req, res) => {
         WHERE meta_key = 'job_id' AND meta_value = $2
       )
     `;
-    
-    const existingPayment = await db.query(existingPaymentQuery, [company_id, jobId]);
-    
-    // If there's an existing pending payment intent, return that instead of creating a new one
+
+    const existingPayment = await db.query(existingPaymentQuery, [actualCompanyId, jobId]);
+
     if (existingPayment.rows.length > 0) {
+      console.log('Existing pending payment found. Verifying job status...');
       const payment = existingPayment.rows[0];
-      
-      // Get the job details to ensure it's still valid
+
       const jobQuery = `
         SELECT j.*, j.title, sf.user_id as freelancer_id, q.quote_price 
         FROM jobs j
@@ -727,21 +744,21 @@ exports.createJobCompletionPayment = async (req, res) => {
         JOIN quotes q ON j.job_id = q.job_id AND sf.user_id = q.user_id
         WHERE j.job_id = $1 AND j.company_id = $2 AND j.status = 'in_progress'
       `;
-      
-      const jobResult = await db.query(jobQuery, [jobId, company_id]);
-      
+
+      const jobResult = await db.query(jobQuery, [jobId, actualCompanyId]);
+
       if (jobResult.rows.length === 0) {
-        // If job is no longer valid, mark the payment intent as failed
+        console.log('Job not in progress or not found. Marking existing payment as failed.');
         await db.query(
           'UPDATE payment_tracking SET status = $1 WHERE tracking_id = $2',
           ['failed', payment.tracking_id]
         );
         return res.status(404).json({ error: 'Job not found or not in progress' });
       }
-      
+
       const job = jobResult.rows[0];
-      
-      // Return the existing payment details
+      console.log('Returning existing payment intent');
+
       return res.json({
         paymentIntentId: payment.tracking_id,
         jobId,
@@ -750,9 +767,8 @@ exports.createJobCompletionPayment = async (req, res) => {
         redirectUrl: `${process.env.FRONTEND_URL}/payment/job-checkout?intent_id=${payment.tracking_id}&job_id=${jobId}`
       });
     }
-    
-    // If no existing payment intent, proceed with creating a new one
-    // Verify job belongs to this company and is in progress
+
+    console.log('No existing payment found. Verifying job eligibility...');
     const jobQuery = `
       SELECT j.*, j.title, sf.user_id as freelancer_id, q.quote_price 
       FROM jobs j
@@ -760,65 +776,68 @@ exports.createJobCompletionPayment = async (req, res) => {
       JOIN quotes q ON j.job_id = q.job_id AND sf.user_id = q.user_id
       WHERE j.job_id = $1 AND j.company_id = $2 AND j.status = 'in_progress'
     `;
-    
-    const jobResult = await db.query(jobQuery, [jobId, company_id]);
-    
+
+    const jobResult = await db.query(jobQuery, [jobId, actualCompanyId]);
+
     if (jobResult.rows.length === 0) {
+      console.log('Job not found or not in progress');
       return res.status(404).json({ error: 'Job not found or not in progress' });
     }
-    
+
     const job = jobResult.rows[0];
-    
-    // Check if agreement is accepted
+    console.log('Job verified. Checking agreement acceptance...');
+
     const agreementQuery = `
       SELECT * FROM agreements
       WHERE job_id = $1 AND user_id = $2 AND status = 'accepted'
     `;
-    
+
     const agreementResult = await db.query(agreementQuery, [jobId, job.freelancer_id]);
-    
+
     if (agreementResult.rows.length === 0) {
+      console.log('Agreement not accepted by freelancer');
       return res.status(400).json({ error: 'Agreement not yet accepted by freelancer' });
     }
-    
-    // Start transaction for data consistency
+
+    console.log('Agreement accepted. Starting transaction...');
+
     await db.query('BEGIN');
-    
+
     try {
-      // Create unique payment ID to track this transaction
       const paymentIntentId = crypto.randomUUID();
-      
-      // Store payment intent in database
+      console.log(`Generated Payment Intent ID: ${paymentIntentId}`);
+
       const paymentIntentQuery = `
         INSERT INTO payment_tracking 
         (tracking_id, paypal_payment_id, company_id, plan_type, amount, job_limit, status, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
         RETURNING tracking_id
       `;
-      
+
       await db.query(paymentIntentQuery, [
         paymentIntentId,
         'JOB_PAYMENT_' + paymentIntentId.substring(0, 8),
-        company_id,
+        actualCompanyId,
         'job_completion',
         job.quote_price,
-        1, // Not relevant for job payments, but required by schema
+        1,
         'pending'
       ]);
-      
-      // Store job-specific metadata to link this payment to the job
+
+      console.log('Inserted payment intent into payment_tracking');
+
       const metaQuery = `
         INSERT INTO payment_tracking_meta
         (tracking_id, meta_key, meta_value)
         VALUES ($1, $2, $3)
       `;
-      
-      await db.query(metaQuery, [paymentIntentId, 'job_id', jobId]);
-      
-      // Commit the transaction
-      await db.query('COMMIT');
 
-      // Return payment details to frontend
+      await db.query(metaQuery, [paymentIntentId, 'job_id', jobId]);
+      console.log('Inserted payment metadata');
+
+      await db.query('COMMIT');
+      console.log('Transaction committed successfully');
+
       res.json({
         paymentIntentId,
         jobId,
@@ -827,7 +846,7 @@ exports.createJobCompletionPayment = async (req, res) => {
         redirectUrl: `${process.env.FRONTEND_URL}/payment/job-checkout?intent_id=${paymentIntentId}&job_id=${jobId}`
       });
     } catch (txError) {
-      // Rollback on error
+      console.error('Transaction failed. Rolling back...', txError);
       await db.query('ROLLBACK');
       throw txError;
     }
@@ -836,6 +855,7 @@ exports.createJobCompletionPayment = async (req, res) => {
     res.status(500).json({ error: 'Failed to create payment intent' });
   }
 };
+
 
 exports.processJobCompletionPayment = async (req, res) => {
   const { 
@@ -846,7 +866,7 @@ exports.processJobCompletionPayment = async (req, res) => {
     expiryYear, 
     cvc, 
     cardholderName,
-    company_id
+    company_id  // This is actually the user_id from users table
   } = req.body;
   
   // Basic validation
@@ -855,6 +875,21 @@ exports.processJobCompletionPayment = async (req, res) => {
   }
 
   try {
+    // First, get the actual company_id from the companies table using the user_id
+    const companyQuery = `
+      SELECT company_id FROM companies WHERE user_id = $1
+    `;
+    
+    const companyResult = await db.query(companyQuery, [company_id]);
+    
+    if (companyResult.rows.length === 0) {
+      console.log(`No company found for user ID: ${company_id}`);
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    
+    const actualCompanyId = companyResult.rows[0].company_id;
+    console.log(`Found actual company ID: ${actualCompanyId} for user ID: ${company_id}`);
+
     // Start transaction
     await db.query('BEGIN');
     
@@ -869,7 +904,7 @@ exports.processJobCompletionPayment = async (req, res) => {
       AND ptm.meta_value = $3
     `;
     
-    const trackingResult = await db.query(trackingQuery, [paymentIntentId, company_id, jobId]);
+    const trackingResult = await db.query(trackingQuery, [paymentIntentId, actualCompanyId, jobId]);
     
     if (trackingResult.rows.length === 0) {
       await db.query('ROLLBACK');
@@ -884,7 +919,7 @@ exports.processJobCompletionPayment = async (req, res) => {
       WHERE job_id = $1 AND company_id = $2 AND payment_status = 'completed'
     `;
     
-    const existingPayment = await db.query(existingPaymentQuery, [jobId, company_id]);
+    const existingPayment = await db.query(existingPaymentQuery, [jobId, actualCompanyId]);
     
     if (existingPayment.rows.length > 0) {
       // Payment already exists, mark this intent as completed
@@ -913,7 +948,7 @@ exports.processJobCompletionPayment = async (req, res) => {
       WHERE j.job_id = $1 AND j.company_id = $2 AND j.status = 'in_progress'
     `;
     
-    const jobResult = await db.query(jobQuery, [jobId, company_id]);
+    const jobResult = await db.query(jobQuery, [jobId, actualCompanyId]);
     
     if (jobResult.rows.length === 0) {
       await db.query('ROLLBACK');
@@ -947,7 +982,7 @@ exports.processJobCompletionPayment = async (req, res) => {
       `;
       
       const paymentResult = await db.query(paymentQuery, [
-        jobId, company_id, job.quote_price
+        jobId, actualCompanyId, job.quote_price
       ]);
       
       // Create job completion record with properly set completed_at field
@@ -961,7 +996,7 @@ exports.processJobCompletionPayment = async (req, res) => {
       const completionResult = await db.query(completionQuery, [
         jobId, 
         job.freelancer_id, 
-        company_id, 
+        actualCompanyId, 
         job.quote_price
       ]);
       

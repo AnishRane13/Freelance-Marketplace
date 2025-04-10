@@ -13,7 +13,6 @@ import {
   User,
   CheckCircle,
   AlertCircle,
-  Award,
   Share2,
 } from "lucide-react";
 
@@ -245,7 +244,7 @@ const JobDetails = () => {
     return null;
   }
 
-  console.log("This is jobDetails", jobDetails)
+  console.log("This is jobDetails", jobDetails);
 
   const { job, quotes, selectedFreelancer, agreement } = jobDetails;
   const expired = isJobExpired(job.deadline);
@@ -271,8 +270,8 @@ const JobDetails = () => {
   );
 
   console.log("Agreement data:", agreement);
-console.log("userType:", userType);
-console.log("Tab condition:", agreement && activeTab === "agreement");
+  console.log("userType:", userType);
+  console.log("Tab condition:", agreement && activeTab === "agreement");
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen">
