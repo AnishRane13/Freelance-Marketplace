@@ -1,8 +1,73 @@
-Anish and Chinmay are users
+I have developed a project named Freelance Marketplace.
 
-company2 posts a job already for tomorrow nad we will shoot for tomorrow
+In this project we have 2 types of users
 
-Anish has accepted that job
+1. Users   2. Company
+
+User and company can register using Name, email and password. 
+
+The email id registered under any section cannot be used for other section. 
+
+When user first logs in the application, the user should select the categories of which the posts he will be making, categories he is interested in and of the skills he is capable of.
+
+The user can create posts in which he can post multiple images, use a caption and also select the category of which the post he is making.
+Other users and company who have selected the category of which the user have made post can see that post in their feed and like it, comment on it. 
+
+Users can showcase their talent by making number of posts with the images of their work.
+
+In the user's profile section, user can update their profile picture and cover picture and also update location, email id etc.
+
+In the profile section, user can also see all the posts they have made.
+
+When a company logs in for the first time, they can also select the categories just like users. The company can see the contents related to the categories selected by them. Also when company posts job, they will only be able to post a job, with one of the categories selected by them.
+
+http://localhost:5173/company/createjob
+When the company wants to post a job, they first need to buy subscription, a modal will open with these values and upon selecting any plan a payment modal will open for payment. 
+
+const SUBSCRIPTION_PLANS = {
+  STARTER: {
+    amount: 100,
+    jobLimit: 2,
+    description: 'Starter Plan - 2 Job Posts',
+    duration: 30 // days
+  },
+  STANDARD: {
+    amount: 500,
+    jobLimit: 10,
+    description: 'Standard Plan - 10 Job Posts',
+    duration: 30 // days
+  },
+  PREMIUM: {
+    amount: 1000,
+    jobLimit: 25,
+    description: 'Premium Plan - 25 Job Posts',
+    duration: 60 // days
+  }
+};
+
+When Company posts job they can enter Job Title, Description, Category, Location, Budget and Deadline Date on which the job needs to be completed
+
+http://localhost:5173/user/jobs/5
+Now the users would be able to see all the posted jobs on this route http://localhost:5173/user/jobs/5
+On this page, user can filter the jobs based on the categories that they have already selected on the first login. 
+For each of the specific job, user can see everything related to the job and if that fits well with their skills then user can submit a quote price and a little description of what user will be doing on this job, something like a cover letter. 
+Quote price would be the price on which user is okay to do the job.
+
+Once the user submits the quoted price, company would be able go to the http://localhost:5173/company/jobs/4 to see all the jobs posted by that them. When it clicks on any View Details button of any specific job, it would go to http://localhost:5173/company/jobDetails/15.
+On this page company will all the details of that job with status as Active meaning the jobs is active and is accepting quoted prices from other users. Here company will see all the quoted prices for this job, user who has quoted it and a select freelenacer button.
+Company can go to the user's profiles who have quoted for this job, see their work and select the one who's work is good and who's quoted price is matching their budget. For selecting freelancer company will click on Select Freelancer button and that user would be selected for that job and user will get this agreement in the agreements tab. 
+
+User can check if any company has selected him by going to View Agreements tab In the jobs routes. 
+In this tab, user can see the jobs for which he has been selected, with status as Pending. When user clicks on View Details button of that job then will be going to the JobDetails page of that job, on that page user will get to see Job Details and also Button to accept the job or reject the job. If user rejects the job then company will select another freelancer. If user accepts the job, then the status of that job changes to accepted and company will get to know the jobs is accepted. 
+
+Now they will contact by themselves, I am have not developed this feature. 
+
+Once the job is completed, company will go to the JobDetails Page and then to the agreements tab and mark the job as completed if the job is completed and even if it is completed before the due date. When company will click on Mark as completed, a payment modal will open asking company to pay the accepted quoted price and when payment is done, the amount will be reflected in the user's profile under Total Earnings.
 
 
-Jobs posted by the company are not visible.
+Users or companies can change the categories they have selected by clicking on the Categories button and it will open a modal with all the categories and categories selected by them and user can select new categories or remove previously selected categories. Based on that all the data will be shown to them.
+Because in this application, user will have complete control over what they want to see.
+
+
+
+https://chatgpt.com/c/67f94409-b52c-800e-a5da-4eebcc7311fc
