@@ -27,7 +27,7 @@ const UserJobs = () => {
         {view === "jobs" ? (
           <UserJobsContent user_id={user_id} />
         ) : (
-          <UserAgreementsContent user_id={user_id} />
+          <UserAgreementsContent />
         )}
       </div>
     </div>

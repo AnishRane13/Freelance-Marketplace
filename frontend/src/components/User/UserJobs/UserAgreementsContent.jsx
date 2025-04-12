@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../../LoadingSpinner";
 import { motion } from "framer-motion";
 
-const UserAgreementsContent = ({ user_id }) => {
-  console.log("This is from Agreement page", user_id)
+const UserAgreementsContent = () => {
+  // console.log("This is from Agreement page", user_id)
+  const user_id = localStorage.getItem("user_id")
   const [agreements, setAgreements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,6 +41,7 @@ const UserAgreementsContent = ({ user_id }) => {
 
   // Handle navigation to agreement details
   const handleViewDetails = (agreementId) => {
+    console.log("this is the agreement", agreementId)
     navigate(`/user/agreements/${agreementId}`);
   };
 

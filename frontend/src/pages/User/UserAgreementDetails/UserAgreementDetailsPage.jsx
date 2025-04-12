@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import LoadingSpinner from "../../../components/LoadingSpinner";
+import { SuccessNotification, ErrorNotification } from "../../../components/Notification";
 
 const UserAgreementDetails = () => {
   const { agreementId } = useParams();
@@ -11,6 +12,18 @@ const UserAgreementDetails = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("details");
   const [processing, setProcessing] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+  // Function to add a notification
+  const addNotification = (type, message) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, type, message }]);
+  };
+
+  // Function to remove a notification
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  };
 
   useEffect(() => {
     const fetchAgreementDetails = async () => {
@@ -67,7 +80,6 @@ const UserAgreementDetails = () => {
     }
   }, [agreementId]);
   
-
   const handleGoBack = () => {
     navigate(-1);
   };
@@ -100,14 +112,15 @@ const UserAgreementDetails = () => {
           response_at: new Date().toISOString(),
         });
 
-        // Show success message
-        alert("Agreement accepted successfully!");
+        // Show success notification instead of alert
+        addNotification("success", "Agreement accepted successfully!");
       } else {
         throw new Error(data.error || "Failed to accept agreement");
       }
     } catch (err) {
       console.error("Error accepting agreement:", err);
       setError("Failed to accept agreement. Please try again later.");
+      addNotification("error", "Failed to accept agreement. Please try again later.");
     } finally {
       setProcessing(false);
     }
@@ -149,8 +162,9 @@ const UserAgreementDetails = () => {
           response_at: new Date().toISOString(),
         });
 
-        // Show success message
-        alert("Agreement rejected successfully!");
+        // Show success notification instead of alert
+        addNotification("success", "Agreement rejected successfully!");
+        
         // Optionally navigate back after rejection
         setTimeout(() => navigate("/user/jobs/:user_id"), 1500);
       } else {
@@ -159,6 +173,7 @@ const UserAgreementDetails = () => {
     } catch (err) {
       console.error("Error rejecting agreement:", err);
       setError("Failed to reject agreement. Please try again later.");
+      addNotification("error", "Failed to reject agreement. Please try again later.");
     } finally {
       setProcessing(false);
     }
@@ -203,6 +218,7 @@ const UserAgreementDetails = () => {
       case "pending":
         return "bg-yellow-100 text-yellow-700";
       case "canceled":
+      case "rejected":
         return "bg-red-100 text-red-700";
       default:
         return "bg-gray-100 text-gray-700";
@@ -217,7 +233,7 @@ const UserAgreementDetails = () => {
     );
   }
 
-  if (error) {
+  if (error && !agreement) {
     return (
       <div className="container mx-auto px-4 py-8">
         <button
@@ -286,6 +302,23 @@ const UserAgreementDetails = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Render notifications */}
+      {notifications.map((notification) => (
+        notification.type === 'success' ? (
+          <SuccessNotification
+            key={notification.id}
+            message={notification.message}
+            onClose={() => removeNotification(notification.id)}
+          />
+        ) : (
+          <ErrorNotification
+            key={notification.id}
+            message={notification.message}
+            onClose={() => removeNotification(notification.id)}
+          />
+        )
+      ))}
+
       <button
         onClick={handleGoBack}
         className="flex items-center text-blue-600 hover:text-blue-800 mb-6"
@@ -471,30 +504,29 @@ const UserAgreementDetails = () => {
               </div>
             </div>
           )}
-
         </div>
 
-       {/* Action Buttons */}
-<div className="mt-6 flex justify-end space-x-4">
-  {agreement.status.toLowerCase() === "pending" && (
-    <>
-      <button
-        className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-sm"
-        onClick={handleAcceptAgreement}
-        disabled={processing}
-      >
-        {processing ? "Processing..." : "Accept Agreement"}
-      </button>
-      <button
-        className="border border-red-500 text-red-500 hover:bg-red-50 font-medium py-2 px-6 rounded-md transition-colors shadow-sm"
-        onClick={handleRejectAgreement}
-        disabled={processing}
-      >
-        {processing ? "Processing..." : "Reject Agreement"}
-      </button>
-    </>
-  )}
-</div>
+        {/* Action Buttons */}
+        <div className="mt-6 flex justify-end space-x-4">
+          {agreement.status.toLowerCase() === "pending" && (
+            <>
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors shadow-sm"
+                onClick={handleAcceptAgreement}
+                disabled={processing}
+              >
+                {processing ? "Processing..." : "Accept Agreement"}
+              </button>
+              <button
+                className="border border-red-500 text-red-500 hover:bg-red-50 font-medium py-2 px-6 rounded-md transition-colors shadow-sm"
+                onClick={handleRejectAgreement}
+                disabled={processing}
+              >
+                {processing ? "Processing..." : "Reject Agreement"}
+              </button>
+            </>
+          )}
+        </div>
       </motion.div>
     </div>
   );
