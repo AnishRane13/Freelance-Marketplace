@@ -13,6 +13,10 @@ When user first logs in the application, the user should select the categories o
 The user can create posts in which he can post multiple images, use a caption and also select the category of which the post he is making.
 Other users and company who have selected the category of which the user have made post can see that post in their feed and like it, comment on it. 
 
+For all the posts functionality I have used Web Sockets.
+
+For storing all the images I have used AWS S3.
+
 Users can showcase their talent by making number of posts with the images of their work.
 
 In the user's profile section, user can update their profile picture and cover picture and also update location, email id etc.
@@ -68,6 +72,7 @@ Once the job is completed, company will go to the JobDetails Page and then to th
 Users or companies can change the categories they have selected by clicking on the Categories button and it will open a modal with all the categories and categories selected by them and user can select new categories or remove previously selected categories. Based on that all the data will be shown to them.
 Because in this application, user will have complete control over what they want to see.
 
+Technologies Used are: React, Nodejs, PostgresSql, tailwind, AWS, Web sockets 
 
 
 https://chatgpt.com/c/67f94409-b52c-800e-a5da-4eebcc7311fc
