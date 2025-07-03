@@ -934,7 +934,8 @@ exports.processJobCompletionPayment = async (req, res) => {
         success: true,
         message: 'Payment was already processed successfully',
         payment: existingPayment.rows[0],
-        redirectUrl: `${process.env.FRONTEND_URL}/jobs/completed?job_id=${jobId}`
+        redirectUrl: `${process.env.FRONTEND_URL}/company/dashboard`
+        // redirectUrl: `${process.env.FRONTEND_URL}/jobs/completed?job_id=${jobId}`
       });
     }
     
@@ -1022,7 +1023,8 @@ exports.processJobCompletionPayment = async (req, res) => {
         message: 'Payment processed and job completed successfully', 
         job: updatedJob.rows[0],
         payment: paymentResult.rows[0],
-        redirectUrl: `${process.env.FRONTEND_URL}/jobs/completed?job_id=${jobId}`
+        redirectUrl: `${process.env.FRONTEND_URL}/company/dashboard`
+        // redirectUrl: `${process.env.FRONTEND_URL}/jobs/completed?job_id=${jobId}`
       });
     } catch (dbError) {
       // Rollback transaction on error

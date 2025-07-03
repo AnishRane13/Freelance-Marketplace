@@ -88,7 +88,7 @@ const AgreementTab = ({
             <p className="text-gray-700">{selectedFreelancer.name}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Companyyyyyyyyyyy</p>
+            <p className="text-sm text-gray-500">Company</p>
             <p className="text-gray-700">{job.company_name}</p>
           </div>
           <div>

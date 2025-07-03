@@ -75,3 +75,4 @@ Because in this application, user will have complete control over what they want
 Technologies Used are: React, Nodejs, PostgresSql, tailwind, AWS, Web sockets 
 
 
+https://chatgpt.com/c/67f94409-b52c-800e-a5da-4eebcc7311fc
